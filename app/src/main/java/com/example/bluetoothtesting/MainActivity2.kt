@@ -3,7 +3,6 @@ package com.example.bluetoothtesting
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
@@ -20,12 +19,9 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import br.com.simplepass.loadingbutton.presentation.State
 import com.contec.spo2.code.bean.*
-import com.contec.spo2.code.callback.CommunicateCallback
 import com.contec.spo2.code.callback.ConnectCallback
 import com.contec.spo2.code.callback.RealtimeCallback
-import com.contec.spo2.code.callback.RealtimeSpO2Callback
 import com.contec.spo2.code.connect.ContecSdk
 import java.util.Timer
 import kotlin.concurrent.schedule
