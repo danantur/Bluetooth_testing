@@ -24,9 +24,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import br.com.simplepass.loadingbutton.customViews.CircularProgressButton
 import br.com.simplepass.loadingbutton.presentation.State
-import com.contec.spo2.code.bean.SdkConstants
-import com.contec.spo2.code.callback.BluetoothSearchCallback
-import com.contec.spo2.code.connect.ContecSdk
+import com.ideabus.mylibrary.code.bean.SdkConstants
+import com.ideabus.mylibrary.code.callback.BluetoothSearchCallback
+import com.ideabus.mylibrary.code.connect.ContecSdk
 import com.example.bluetoothtesting.BluetoothList.BluetoothListAdapter
 import com.example.bluetoothtesting.BluetoothList.Diffutil
 
@@ -242,12 +242,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     var searchCallback: BluetoothSearchCallback = object : BluetoothSearchCallback {
-        override fun onDeviceFound(device: BluetoothDevice, rssi: Int, record: ByteArray) {
+        override fun onDeviceFound(bluetoothDevice: BluetoothDevice, rssi: Int, record: ByteArray) {
             runOnUiThread {
-                Log.e("debug", device.name)
-                if (!DeviceList.contains(device)) {
+                Log.e("debug", bluetoothDevice.name)
+                if (!DeviceList.contains(bluetoothDevice)) {
                     val oldList: ArrayList<BluetoothDevice> = DeviceList.clone() as ArrayList<BluetoothDevice>
-                    DeviceList.add(device)
+                    DeviceList.add(bluetoothDevice)
                     val calc = DiffUtil.calculateDiff(Diffutil(oldList, DeviceList))
                     calc.dispatchUpdatesTo(DeviceAdapter!!)
                 }

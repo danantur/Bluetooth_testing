@@ -19,10 +19,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.contec.spo2.code.bean.*
-import com.contec.spo2.code.callback.ConnectCallback
-import com.contec.spo2.code.callback.RealtimeCallback
-import com.contec.spo2.code.connect.ContecSdk
+import com.ideabus.mylibrary.code.bean.*
+import com.ideabus.mylibrary.code.callback.ConnectCallback
+import com.ideabus.mylibrary.code.callback.RealtimeCallback
+import com.ideabus.mylibrary.code.connect.ContecSdk
 import java.util.Timer
 import kotlin.concurrent.schedule
 
@@ -35,18 +35,18 @@ class MainActivity2 : AppCompatActivity() {
     
     private var finish_timer: Timer? = null
     
-    private var device_name: String? = null
-    private var device_address: String? = null
+    private lateinit var device_name: String
+    private lateinit var device_address: String
 
-    private var text1: TextView? = null
-    private var text2: TextView? = null
-    private var loading: ProgressBar? = null
+    private lateinit var text1: TextView
+    private lateinit var text2: TextView
+    private lateinit var loading: ProgressBar
 
     private var connected: Boolean = false
 
     private var bluetooth: BluetoothAdapter? = null
     private var bluetoothOK: Boolean = false
-    private var sdk: ContecSdk? = null
+    private lateinit var sdk: ContecSdk
 
     private var locationmanager: LocationManager? = null
 
@@ -74,13 +74,13 @@ class MainActivity2 : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        device_name = intent.getStringExtra(DEVICE_NAME)
-        device_address = intent.getStringExtra(DEVICE_ADDRESS)
+        device_name = intent.getStringExtra(DEVICE_NAME)!!
+        device_address = intent.getStringExtra(DEVICE_ADDRESS)!!
 
         title = device_name
 
         sdk = ContecSdk(this)
-        sdk?.init(false)
+        sdk.init(false)
 
         val sys_service = getSystemService(Context.BLUETOOTH_SERVICE)
         bluetooth = (if (sys_service is BluetoothManager) sys_service else null)?.adapter
@@ -210,11 +210,11 @@ class MainActivity2 : AppCompatActivity() {
 
     fun set_communication() {
         if (
-            (device_name?.startsWith("SpO201")!! || device_name?.startsWith("SpO202")!!
-                    || device_name?.startsWith("SpO206")!! || device_name
-                ?.startsWith("SpO208")!!
-                    || device_name?.startsWith("SpO209")!! || device_name
-                ?.startsWith("SpO210")!!)
+            (device_name.startsWith("SpO201") || device_name.startsWith("SpO202")
+                    || device_name.startsWith("SpO206") || device_name
+                .startsWith("SpO208")
+                    || device_name.startsWith("SpO209") || device_name
+                .startsWith("SpO210"))
         ) {
             start_communication()
         }
@@ -225,7 +225,7 @@ class MainActivity2 : AppCompatActivity() {
     }
 
     private fun start_communication() {
-        sdk?.connect(device_address, object : ConnectCallback {
+        sdk.connect(device_address, object : ConnectCallback {
             override fun onConnectStatus(p0: Int) {
                 runOnUiThread {
                     when (p0) {
@@ -241,13 +241,13 @@ class MainActivity2 : AppCompatActivity() {
                         SdkConstants.CONNECT_CONNECTED -> {
                             Log.e("debug", "CONNECT_CONNECTED!")
                             connected = true
-                            text1?.visibility = View.VISIBLE
-                            text2?.visibility = View.VISIBLE
-                            loading?.visibility = View.INVISIBLE
-                            sdk?.startRealtime(object : RealtimeCallback {
-                                override fun onFail(p0: Int) {
+                            text1.visibility = View.VISIBLE
+                            text2.visibility = View.VISIBLE
+                            loading.visibility = View.INVISIBLE
+                            sdk.startRealtime(object : RealtimeCallback {
+                                override fun onFail(errorCode: Int) {
                                     runOnUiThread {
-                                        Log.e("debug", p0.toString())
+                                        Log.e("onFail", errorCode.toString())
                                         Toast.makeText(applicationContext, "Передача данных завершена", Toast.LENGTH_LONG).show()
                                         finish()
                                     }
@@ -266,12 +266,14 @@ class MainActivity2 : AppCompatActivity() {
                                 override fun onSpo2Data(p0: Int, p1: Int, p2: Int, p3: Int) {
                                     Log.e("spo2Data", "$p0 $p1 $p2 $p3")
                                     runOnUiThread {
-                                        text1?.text = ("$p1%")
-                                        text2?.text = ("$p2 pm")
+                                        text1.text = ("$p1%")
+                                        text2.text = ("$p2 pm")
                                     }
                                 }
 
-                                override fun onRealtimeEnd() {}
+                                override fun onRealtimeEnd() {
+                                    Log.e("debug", "бб")
+                                }
 
                             })
                         }
@@ -287,7 +289,7 @@ class MainActivity2 : AppCompatActivity() {
                         SdkConstants.CONNECT_DISCONNECT_SERVICE_UNFOUND -> {
                             Toast.makeText(
                                 applicationContext,
-                                "No sevice found, Disconnecting...",
+                                "No service found, Disconnecting...",
                                 Toast.LENGTH_LONG
                             ).show()
                             connected = false
@@ -320,14 +322,14 @@ class MainActivity2 : AppCompatActivity() {
 
     override fun onBackPressed() {
         if (connected) {
-            sdk?.disconnect()
+            sdk.disconnect()
         }
         super.finish()
     }
 
     override fun finish() {
         if (connected) {
-            sdk?.disconnect()
+            sdk.disconnect()
         }
         if (finish_timer == null) {
             finish_timer = Timer("FinishDelay", false)
