@@ -214,14 +214,14 @@ public class CommunicateWatches extends CommunicateBasic
     }
     
     private void b(final PieceData pieceData) {
-        pieceData.setDataType(this.dataTypeInt);
-        pieceData.setTotalNumber(this.totalNumber);
-        pieceData.setCaseCount(this.caseCount);
-        pieceData.setSupportPI(0);
-        pieceData.setLength(this.I);
-        pieceData.setStartTime(this.ag);
-        pieceData.setSpo2Data(this.Z);
-        pieceData.setPrData(this.Y);
+        pieceData.dataType = this.dataTypeInt;
+        pieceData.totalNumber = this.totalNumber;
+        pieceData.caseCount = this.caseCount;
+        pieceData.supportPI = 0;
+        pieceData.length = this.I;
+        pieceData.startTime = this.ag;
+        pieceData.spo2Data = this.Z;
+        pieceData.prData = this.Y;
     }
     
     private void e() {
@@ -271,18 +271,18 @@ public class CommunicateWatches extends CommunicateBasic
         public void run() {
             while (running) {
                 if (null != inputData && !inputData.isEmpty()) {
-                    this.isDataNull(this.bytes, 0, 1);
+                    this.resolveInputData(this.bytes, 0, 1);
                     if (!running) {
                         return;
                     }
                     switch (this.bytes[0]) {
                         case -21: {
-                            this.isDataNull(this.bytes, 1, 1);
+                            this.resolveInputData(this.bytes, 1, 1);
                             if (!running) {
                                 return;
                             }
                             if (this.bytes[1] == 0) {
-                                this.isDataNull(this.bytes, 2, 4);
+                                this.resolveInputData(this.bytes, 2, 4);
                                 if (!running) {
                                     return;
                                 }
@@ -291,11 +291,11 @@ public class CommunicateWatches extends CommunicateBasic
                                 if (CommunicateWatches.this.realtimeCallback == null) {
                                     continue;
                                 }
-                                CommunicateWatches.this.realtimeCallback.onRealtimeWaveData(b.a(), b.b(), b.c(), b.d(), b.e());
+                                CommunicateWatches.this.realtimeCallback.onRealtimeWaveData(b.signal, b.prSound, b.waveData, b.barData, b.fingerOut);
                                 continue;
                             }
                             else if (this.bytes[1] == 1) {
-                                this.isDataNull(this.bytes, 2, 6);
+                                this.resolveInputData(this.bytes, 2, 6);
                                 if (!running) {
                                     return;
                                 }
@@ -303,20 +303,20 @@ public class CommunicateWatches extends CommunicateBasic
                                 final Spo2Data d = DataClassesParseUtils.parseSpo2Data(this.bytes);
                                 if (CommunicateWatches.this.realtimeCallback != null) {
                                     CommunicateWatches.this.setSpo2Timeout(CommunicateWatches.this.realtimeCallback);
-                                    CommunicateWatches.this.realtimeCallback.onSpo2Data(d.a(), d.c(), d.b(), d.d());
+                                    CommunicateWatches.this.realtimeCallback.onSpo2Data(d.piError, d.pr, d.spo2, d.pi);
                                 }
                                 if (CommunicateWatches.this.realtimeSpO2Callback == null) {
                                     continue;
                                 }
                                 CommunicateWatches.this.setSpo2Timeout(CommunicateWatches.this.realtimeSpO2Callback);
-                                CommunicateWatches.this.realtimeSpO2Callback.onRealtimeSpo2Data(d.c(), d.b(), d.d());
+                                CommunicateWatches.this.realtimeSpO2Callback.onRealtimeSpo2Data(d.pr, d.spo2, d.pi);
                                 continue;
                             }
                             else {
                                 if (this.bytes[1] != 127) {
                                     continue;
                                 }
-                                this.isDataNull(this.bytes, 2, 1);
+                                this.resolveInputData(this.bytes, 2, 1);
                                 if (!running) {
                                     return;
                                 }
@@ -338,7 +338,7 @@ public class CommunicateWatches extends CommunicateBasic
                             }
                         }
                         case -15: {
-                            this.isDataNull(this.bytes, 1, 9);
+                            this.resolveInputData(this.bytes, 1, 9);
                             if (!running) {
                                 return;
                             }
@@ -348,7 +348,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -13: {
-                            this.isDataNull(this.bytes, 1, 2);
+                            this.resolveInputData(this.bytes, 1, 2);
                             if (!running) {
                                 return;
                             }
@@ -358,7 +358,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -12: {
-                            this.isDataNull(this.bytes, 1, 2);
+                            this.resolveInputData(this.bytes, 1, 2);
                             if (!running) {
                                 return;
                             }
@@ -368,7 +368,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -32: {
-                            this.isDataNull(this.bytes, 1, 6);
+                            this.resolveInputData(this.bytes, 1, 6);
                             if (!running) {
                                 return;
                             }
@@ -446,7 +446,7 @@ public class CommunicateWatches extends CommunicateBasic
                             }
                         }
                         case -31: {
-                            this.isDataNull(this.bytes, 1, 10);
+                            this.resolveInputData(this.bytes, 1, 10);
                             if (!running) {
                                 return;
                             }
@@ -491,7 +491,7 @@ public class CommunicateWatches extends CommunicateBasic
                         }
                         case -30: {
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
-                            this.isDataNull(this.bytes, 1, 10);
+                            this.resolveInputData(this.bytes, 1, 10);
                             if (!running) {
                                 return;
                             }
@@ -536,7 +536,7 @@ public class CommunicateWatches extends CommunicateBasic
                         }
                         case -29: {
                             CommunicateWatches.this.fiveMinStepsData = new FiveMinStepsData();
-                            this.isDataNull(this.bytes, 1, 8);
+                            this.resolveInputData(this.bytes, 1, 8);
                             if (!running) {
                                 return;
                             }
@@ -555,7 +555,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -28: {
-                            this.isDataNull(this.bytes, 1, 16);
+                            this.resolveInputData(this.bytes, 1, 16);
                             if (!running) {
                                 return;
                             }
@@ -611,7 +611,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -27: {
-                            this.isDataNull(this.bytes, 1, 17);
+                            this.resolveInputData(this.bytes, 1, 17);
                             if (!running) {
                                 return;
                             }
@@ -622,7 +622,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -26: {
-                            this.isDataNull(this.bytes, 1, 16);
+                            this.resolveInputData(this.bytes, 1, 16);
                             if (!running) {
                                 return;
                             }
@@ -690,7 +690,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -48: {
-                            this.isDataNull(this.bytes, 1, 13);
+                            this.resolveInputData(this.bytes, 1, 13);
                             if (!running) {
                                 return;
                             }
@@ -728,7 +728,7 @@ public class CommunicateWatches extends CommunicateBasic
                             continue;
                         }
                         case -47: {
-                            this.isDataNull(this.bytes, 1, 3);
+                            this.resolveInputData(this.bytes, 1, 3);
                             if (!running) {
                                 return;
                             }
@@ -775,7 +775,7 @@ public class CommunicateWatches extends CommunicateBasic
                         }
                         case -46: {
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
-                            this.isDataNull(this.bytes, 1, 19);
+                            this.resolveInputData(this.bytes, 1, 19);
                             if (!running) {
                                 return;
                             }
@@ -784,7 +784,7 @@ public class CommunicateWatches extends CommunicateBasic
                         }
                         case -45: {
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
-                            this.isDataNull(this.bytes, 1, 19);
+                            this.resolveInputData(this.bytes, 1, 19);
                             if (!running) {
                                 return;
                             }
@@ -796,7 +796,7 @@ public class CommunicateWatches extends CommunicateBasic
             }
         }
         
-        public void isDataNull(final byte[] array, final int startIndex, final int endIndex) {
+        public void resolveInputData(final byte[] array, final int startIndex, final int endIndex) {
             for (int i = startIndex; i < endIndex + startIndex && running; ++i) {
                 if (inputData != null && !inputData.isEmpty()) {
                     array[i] = inputData.poll();

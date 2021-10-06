@@ -822,6 +822,7 @@ public class CommunicateBasic extends CommunicateBase
     }
 
     private void fillData(final PieceData pieceData) {
+        // TODO: понять, по какому признаку деляться наборы данных
         pieceData.dataType = this.dataTypeInt;
         pieceData.totalNumber = this.totalNumber;
         pieceData.caseCount = this.caseCount;
@@ -854,8 +855,8 @@ public class CommunicateBasic extends CommunicateBase
             }
         }
         else if (pieceData instanceof c) {
-            pieceData.setLength(this.dataLength);
-            pieceData.setStartTime(this.startTime);
+            pieceData.length = this.dataLength;
+            pieceData.startTime = this.startTime;
             spo2Data = new int[this.dataLength];
             prData = new int[this.dataLength];
             System.arraycopy(this.V, 0, spo2Data, 0, this.dataLength);
@@ -866,8 +867,8 @@ public class CommunicateBasic extends CommunicateBase
             }
         }
         else if (pieceData instanceof b) {
-            pieceData.setLength(this.I);
-            pieceData.setStartTime(this.ag);
+            pieceData.length = this.I;
+            pieceData.startTime = this.ag;
             spo2Data = new int[this.I];
             prData = new int[this.I];
             System.arraycopy(this.Z, 0, spo2Data, 0, this.I);
@@ -877,9 +878,9 @@ public class CommunicateBasic extends CommunicateBase
                 System.arraycopy(this.ab, 0, piData, 0, this.I);
             }
         }
-        pieceData.setSpo2Data(spo2Data);
-        pieceData.setPrData(prData);
-        pieceData.setPiData(piData);
+        pieceData.spo2Data = spo2Data;
+        pieceData.prData = prData;
+        pieceData.piData = piData;
     }
 
     private void s() {
