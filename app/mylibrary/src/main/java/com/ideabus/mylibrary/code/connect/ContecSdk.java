@@ -60,7 +60,7 @@ public class ContecSdk
     public ContecSdk(final Context ctx) {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         isSearching = false;
-        scanCallback = (BluetoothAdapter.LeScanCallback) (bluetoothDevice, rssi, record) -> {
+        scanCallback = (bluetoothDevice, rssi, record) -> {
             if (bluetoothDevice.getName() == null) {
                 return;
             }
@@ -75,7 +75,7 @@ public class ContecSdk
     public ContecSdk(final Context ctx, final String rangeID) {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         isSearching = false;
-        scanCallback = (BluetoothAdapter.LeScanCallback) (bluetoothDevice, rssi, record) -> {
+        scanCallback = (bluetoothDevice, rssi, record) -> {
             if (bluetoothDevice.getName() == null) {
                 return;
             }
@@ -97,7 +97,7 @@ public class ContecSdk
         supportedDevices.put("SpO210", DeviceType.CMS50K);
     }
     
-    public static boolean getIsCheckDevice() {
+    public static boolean isRangeIDEmpty() {
         return ContecSdk.rangeID.isEmpty();
     }
     

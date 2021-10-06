@@ -7,18 +7,18 @@ package com.ideabus.mylibrary.code.tools;
 import com.ideabus.mylibrary.code.bean.DayStepsData;
 import com.ideabus.mylibrary.code.bean.EcgData;
 import com.ideabus.mylibrary.code.bean.SpO2PointData;
-import com.ideabus.mylibrary.code.bean.f;
-import com.ideabus.mylibrary.code.bean.g;
+import com.ideabus.mylibrary.code.bean.Spo2Data;
+import com.ideabus.mylibrary.code.bean.WaveData;
 
 import java.util.ArrayList;
 
-public class b
+public class DataClassesParseUtils
 {
     private static String c;
     public static String[] a;
     public static String[] b;
     
-    public static String a(final int n) {
+    public static String parseDateUnit(final int n) {
         if (n < 10) {
             return "0" + n;
         }
@@ -33,71 +33,71 @@ public class b
         return (byte)(n & 0x7F);
     }
     
-    public static g b(final byte[] array) {
-        final g g = new g();
+    public static WaveData parseWaveData(final byte[] array) {
+        final WaveData g = new WaveData();
         int n = array[1] & 0xF;
         if (n >= 8) {
             n = 8;
         }
-        g.a(n);
-        g.b((array[2] & 0x40) >> 6);
-        g.c(array[3] & 0x7F);
-        g.d(array[4] & 0xF);
-        g.e((array[4] & 0x10) >> 4);
+        g.signal = n;
+        g.prSound = (array[2] & 0x40) >> 6;
+        g.waveData = array[3] & 0x7F;
+        g.barData = array[4] & 0xF;
+        g.fingerOut = (array[4] & 0x10) >> 4;
         return g;
     }
     
-    public static f c(final byte[] array) {
-        final f f = new f();
-        f.a(array[2] & 0x1 & 0xFF);
+    public static Spo2Data parseSpo2Data2(final byte[] array) {
+        final Spo2Data spo2Data = new Spo2Data();
+        spo2Data.piError = array[2] & 0x1 & 0xFF;
         int n = (array[3] & 0x7F) + (array[2] << 6 & 0x80);
         if (n > 254 || n <= 0) {
             n = -1;
         }
-        f.b(n);
+        spo2Data.spo2 = n;
         int n2 = array[4] & 0x7F;
         if (n2 >= 100 || n2 <= 0) {
             n2 = -1;
         }
-        f.c(n2);
+        spo2Data.pr = n2;
         int n3 = (array[5] & 0x7F) + (array[2] << 5 & 0x80);
         if (n3 > 220 || n3 <= 0) {
             n3 = -1;
         }
-        f.d(n3);
-        return f;
+        spo2Data.pi = n3;
+        return spo2Data;
     }
     
-    public static f d(final byte[] array) {
-        final f f = new f();
-        f.a(array[2] & 0x1 & 0xFF);
+    public static Spo2Data parseSpo2Data(final byte[] array) {
+        final Spo2Data spo2Data = new Spo2Data();
+        spo2Data.piError = array[2] & 0x1 & 0xFF;
         int n = (array[3] & 0x7F) + (array[2] << 6 & 0x80);
         if (n > 254 || n <= 0) {
             n = -1;
         }
-        f.b(n);
+        spo2Data.spo2 = n;
         int n2 = array[4] & 0x7F;
         if (n2 >= 100 || n2 <= 0) {
             n2 = -1;
         }
-        f.c(n2);
+        spo2Data.pr = n2;
         int n3 = (array[5] & 0xFF) + ((array[6] & 0xFF) << 7);
         if (n3 > 220 || n3 <= 0) {
             n3 = -1;
         }
-        f.d(n3);
-        return f;
+        spo2Data.pi = n3;
+        return spo2Data;
     }
     
-    public static SpO2PointData e(final byte[] array) {
+    public static SpO2PointData parseSpo2Point(final byte[] array) {
         final SpO2PointData spO2PointData = new SpO2PointData();
-        spO2PointData.setDate(a((array[2] & 0x7F) + 2000) + "-" + a(array[3] & 0xF) + "-" + a(array[4] & 0x1F) + " " + a(array[5] & 0x1F) + ":" + a(array[6] & 0x3F) + ":" + a(array[7] & 0x3F));
+        spO2PointData.setDate(parseDateUnit((array[2] & 0x7F) + 2000) + "-" + parseDateUnit(array[3] & 0xF) + "-" + parseDateUnit(array[4] & 0x1F) + " " + parseDateUnit(array[5] & 0x1F) + ":" + parseDateUnit(array[6] & 0x3F) + ":" + parseDateUnit(array[7] & 0x3F));
         spO2PointData.setSpo2Data(array[8] & 0x7F);
         spO2PointData.setPrData(((array[9] & 0x7F) | (array[3] << 1 & 0x80)) & 0xFF);
         return spO2PointData;
     }
     
-    public static DayStepsData f(final byte[] array) {
+    public static DayStepsData parseDaySteps(final byte[] array) {
         final int year = (array[2] & 0x7F) + 2000;
         final int month = array[3] & 0xF;
         final int day = array[4] & 0x1F;
@@ -112,7 +112,7 @@ public class b
         return dayStepsData;
     }
     
-    public static DayStepsData g(final byte[] array) {
+    public static DayStepsData parseDayStepsWithTargetCalories(final byte[] array) {
         final int year = (array[2] & 0x7F) + 2000;
         final int month = array[3] & 0xF;
         final int day = array[4] & 0x1F;
@@ -176,7 +176,7 @@ public class b
         return array2;
     }
     
-    public static EcgData i(final byte[] array) {
+    public static EcgData parseEcgData(final byte[] array) {
         final EcgData ecgData = new EcgData();
         final int year = (array[1] & 0x7F) + 2000;
         final int month = array[2] & 0xF;
@@ -188,12 +188,12 @@ public class b
         final ArrayList<String> chineseResult = new ArrayList<String>();
         final ArrayList<String> englishResult = new ArrayList<String>();
         int n = array[9] & 0x7F;
-        chineseResult.add(com.ideabus.mylibrary.code.tools.b.b[n]);
-        englishResult.add(com.ideabus.mylibrary.code.tools.b.a[n]);
+        chineseResult.add(DataClassesParseUtils.b[n]);
+        englishResult.add(DataClassesParseUtils.a[n]);
         for (int i = 10; i < 15; ++i) {
             if ((array[i] & 0x7F) != n && array[i] != 0) {
-                chineseResult.add(com.ideabus.mylibrary.code.tools.b.b[array[i] & 0x7F]);
-                englishResult.add(com.ideabus.mylibrary.code.tools.b.a[array[i] & 0x7F]);
+                chineseResult.add(DataClassesParseUtils.b[array[i] & 0x7F]);
+                englishResult.add(DataClassesParseUtils.a[array[i] & 0x7F]);
                 n = (array[i] & 0x7F);
             }
         }
@@ -229,12 +229,12 @@ public class b
         return array2;
     }
     
-    public static String k(final byte[] array) {
-        return a((array[2] & 0x7F) + 2000) + "-" + a(array[3] & 0xF) + "-" + a(array[4] & 0x1F) + " " + a(array[5] & 0x1F) + ":" + a(array[6] & 0x3F) + ":" + a(array[7] & 0x3F);
+    public static String parseDateTimeString(final byte[] array) {
+        return parseDateUnit((array[2] & 0x7F) + 2000) + "-" + parseDateUnit(array[3] & 0xF) + "-" + parseDateUnit(array[4] & 0x1F) + " " + parseDateUnit(array[5] & 0x1F) + ":" + parseDateUnit(array[6] & 0x3F) + ":" + parseDateUnit(array[7] & 0x3F);
     }
     
-    public static String l(final byte[] array) {
-        return a((array[4] & 0x7F) + 2000) + "-" + a(array[5] & 0xF) + "-" + a(array[6] & 0x1F) + " " + a(array[7] & 0x1F) + ":" + a(array[8] & 0x3F) + ":" + a(array[9] & 0x3F);
+    public static String parseDateTimeString2(final byte[] array) {
+        return parseDateUnit((array[4] & 0x7F) + 2000) + "-" + parseDateUnit(array[5] & 0xF) + "-" + parseDateUnit(array[6] & 0x1F) + " " + parseDateUnit(array[7] & 0x1F) + ":" + parseDateUnit(array[8] & 0x3F) + ":" + parseDateUnit(array[9] & 0x3F);
     }
     
     public static short[] m(final byte[] array) {
@@ -382,8 +382,8 @@ public class b
     }
     
     static {
-        com.ideabus.mylibrary.code.tools.b.c = "UnpackManager";
-        com.ideabus.mylibrary.code.tools.b.a = new String[] { "No abnormalities", "Possible:Missed beat", "Possible:Accidental VPB", "Possible:VPB trigeminy", "Possible:VPB bigeminy", "Possible:VPB couple", "Possible:VPB runs of 3", "Possible:VPB runs of 4", "Possible:VPB RonT", "Possible:Bradycardia", "Possible:Tachycardia", "Possible:Arrhythmia", "Possible:ST elevation", "Possible:ST depression" };
-        com.ideabus.mylibrary.code.tools.b.b = new String[] { "\u672a\u89c1\u5f02\u5e38", "\u53ef\u80fd:\u6f0f\u640f", "\u53ef\u80fd:\u5076\u53d1\u5ba4\u65e9", "\u53ef\u80fd:\u5ba4\u65e9\u4e09\u8054\u5f8b", "\u53ef\u80fd:\u5ba4\u65e9\u4e8c\u8054\u5f8b", "\u53ef\u80fd:\u6210\u5bf9\u5ba4\u65e9", "\u53ef\u80fd:\u5ba4\u65e9\u4e09\u8054\u53d1", "\u53ef\u80fd:\u5ba4\u65e9\u56db\u8054\u53d1", "\u53ef\u80fd:\u5ba4\u65e9 RonT", "\u53ef\u80fd:\u5fc3\u52a8\u8fc7\u7f13", "\u53ef\u80fd:\u5fc3\u52a8\u8fc7\u901f", "\u53ef\u80fd:\u5fc3\u5f8b\u4e0d\u9f50", "\u53ef\u80fd:ST \u62ac\u9ad8", "\u53ef\u80fd:T \u538b\u4f4e" };
+        DataClassesParseUtils.c = "UnpackManager";
+        DataClassesParseUtils.a = new String[] { "No abnormalities", "Possible:Missed beat", "Possible:Accidental VPB", "Possible:VPB trigeminy", "Possible:VPB bigeminy", "Possible:VPB couple", "Possible:VPB runs of 3", "Possible:VPB runs of 4", "Possible:VPB RonT", "Possible:Bradycardia", "Possible:Tachycardia", "Possible:Arrhythmia", "Possible:ST elevation", "Possible:ST depression" };
+        DataClassesParseUtils.b = new String[] { "\u672a\u89c1\u5f02\u5e38", "\u53ef\u80fd:\u6f0f\u640f", "\u53ef\u80fd:\u5076\u53d1\u5ba4\u65e9", "\u53ef\u80fd:\u5ba4\u65e9\u4e09\u8054\u5f8b", "\u53ef\u80fd:\u5ba4\u65e9\u4e8c\u8054\u5f8b", "\u53ef\u80fd:\u6210\u5bf9\u5ba4\u65e9", "\u53ef\u80fd:\u5ba4\u65e9\u4e09\u8054\u53d1", "\u53ef\u80fd:\u5ba4\u65e9\u56db\u8054\u53d1", "\u53ef\u80fd:\u5ba4\u65e9 RonT", "\u53ef\u80fd:\u5fc3\u52a8\u8fc7\u7f13", "\u53ef\u80fd:\u5fc3\u52a8\u8fc7\u901f", "\u53ef\u80fd:\u5fc3\u5f8b\u4e0d\u9f50", "\u53ef\u80fd:ST \u62ac\u9ad8", "\u53ef\u80fd:T \u538b\u4f4e" };
     }
 }

@@ -217,4 +217,12 @@ public class Utils
             return (T)viewById;
         }
     }
+
+    public static boolean contains(Object[] array, Object value) {
+        for (Object obj: array) {
+            if (obj.equals(value))
+                return true;
+        }
+        return false;
+    }
 }

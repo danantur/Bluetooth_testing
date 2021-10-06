@@ -11,5 +11,5 @@ public enum DeviceType
     CMS50I, 
     CMS50D, 
     CMS50K, 
-    CMSBleStandardDevice;
+    CMSBleStandardDevice
 }

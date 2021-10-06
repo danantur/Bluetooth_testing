@@ -6,23 +6,12 @@ package com.ideabus.mylibrary.code.bean;
 
 public class a
 {
-    public static int a;
-    public static int b;
-    public static int c;
-    public static int d;
-    public static int e;
-    public static int f;
-    public static int g;
-    public static int h;
-    
-    static {
-        com.ideabus.mylibrary.code.bean.a.a = 4;
-        com.ideabus.mylibrary.code.bean.a.b = 7;
-        com.ideabus.mylibrary.code.bean.a.c = 10;
-        com.ideabus.mylibrary.code.bean.a.d = 1;
-        com.ideabus.mylibrary.code.bean.a.e = 2;
-        com.ideabus.mylibrary.code.bean.a.f = 3;
-        com.ideabus.mylibrary.code.bean.a.g = 4;
-        com.ideabus.mylibrary.code.bean.a.h = 5;
-    }
+    public static int a = 4;
+    public static int b = 7;
+    public static int c = 10;
+    public static int d = 1;
+    public static int e = 2;
+    public static int f = 3;
+    public static int g = 4;
+    public static int h = 5;
 }

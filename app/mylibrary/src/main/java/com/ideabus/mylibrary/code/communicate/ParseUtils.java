@@ -22,19 +22,19 @@ public class ParseUtils
         return new byte[] { -128, 0 };
     }
     
-    public static byte[] b() {
+    public static byte[] getProductIdBytes() {
         final byte[] array = { -127, 0 };
         array[1] = (byte)c(array);
         return array;
     }
     
-    public static byte[] c() {
+    public static byte[] startRealtimeBytes() {
         final byte[] array = { -126, 0 };
         array[1] = (byte)c(array);
         return array;
     }
     
-    public static byte[] d() {
+    public static byte[] currentDateTimeBytes() {
         final byte[] array = new byte[10];
         array[0] = -125;
         final int n = Calendar.getInstance().get(1) - 2000;
@@ -56,7 +56,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] a(final int n, final int n2) {
+    public static byte[] setStepsTimeBytes(final int n, final int n2) {
         final byte[] array = { -124, (byte)(n & 0x7F), (byte)(n2 & 0x7F), 0 };
         array[3] = (byte)c(array);
         return array;
@@ -74,7 +74,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] g() {
+    public static byte[] deleteDataBytes() {
         final byte[] array = { -97, 0 };
         array[1] = (byte)c(array);
         return array;
@@ -86,25 +86,25 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] b(final int n) {
+    public static byte[] pointSpo2Bytes(final int n) {
         final byte[] array = { -111, (byte)n, 0 };
         array[2] = (byte)c(array);
         return array;
     }
     
-    public static byte[] c(final int n) {
+    public static byte[] dayStepsBytes(final int n) {
         final byte[] array = { -110, (byte)n, 0 };
         array[2] = (byte)(c(array) & 0x7F);
         return array;
     }
     
-    public static byte[] d(final int n) {
+    public static byte[] pieceInfoFiveMinStepsBytes(final int n) {
         final byte[] array = { -109, (byte)n, 0 };
         array[2] = (byte)(c(array) & 0x7F);
         return array;
     }
     
-    public static byte[] e(final int n) {
+    public static byte[] fiveMinStepsInfoBytes(final int n) {
         final byte[] array = { -108, (byte)n, 0 };
         array[2] = (byte)(c(array) & 0x7F);
         return array;
@@ -122,13 +122,13 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] realtimeBytes(final int n) {
+    public static byte[] startRealtimeBytes(final int n) {
         final byte[] array = { -101, (byte)n, 0 };
         array[2] = (byte)c(array);
         return array;
     }
     
-    public static byte[] realtimeBytes() {
+    public static byte[] realtimePingBytes() {
         return new byte[] { -102, 26 };
     }
     
@@ -138,7 +138,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] j(final int n) {
+    public static byte[] getPieceInfoBytes(final int n) {
         final byte[] array = { -100, (byte)n, 0 };
         array[2] = (byte)c(array);
         return array;
@@ -156,7 +156,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] k(final int n) {
+    public static byte[] deleteDataAboutSessionBytes(final int n) {
         final byte[] array = { -95, 0, 0 };
         array[0] = -95;
         array[1] = (byte)n;
@@ -164,13 +164,13 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] i() {
+    public static byte[] someBytes() { // Вызывается только при получении команды INPUT_DATA_CONSTANT, если dataConstant >= 11 и currentOperationCode == OPERATE_GET_STORAGE_DATA
         final byte[] array = { -113, 4, 0, 0 };
         array[3] = (byte)(c(array) & 0x7F);
         return array;
     }
     
-    public static byte[] a(final SystemParameter.StorageMode storageMode) {
+    public static byte[] setStorageModeBytes(final SystemParameter.StorageMode storageMode) {
         boolean b = false;
         if (null != storageMode) {
             b = (storageMode != SystemParameter.StorageMode.AUTOMATIC);
@@ -192,13 +192,13 @@ public class ParseUtils
         return array2;
     }
     
-    public static byte[] k() {
+    public static byte[] getStoragePieceBytes() {
         final byte[] array = { -114, 6, 0 };
         array[2] = (byte)c(array);
         return array;
     }
     
-    public static byte[] l() {
+    public static byte[] getStorageModeBytes() {
         final byte[] array = { -114, 7, 0 };
         array[2] = (byte)c(array);
         return array;
@@ -210,7 +210,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] n() {
+    public static byte[] deletePieceOfDataBytes() {
         final byte[] array = { -99, 127, 127, 127, 127, 0, 0, 0 };
         array[7] = (byte)(c(array) & 0x7F);
         return array;
@@ -266,19 +266,19 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] l(final int n) {
+    public static byte[] setWeightBytes(final int n) {
         final byte[] array = { -123, (byte)(n & 0x7F), (byte)(n >> 7 & 0x7F), (byte)(n >> 14 & 0x7F), 0 };
         array[4] = (byte)c(array);
         return array;
     }
     
-    public static byte[] m(final int n) {
+    public static byte[] setHeightBytes(final int n) {
         final byte[] array = { -118, (byte)(n & 0x7F), (byte)(n >> 7 & 0x1), 0 };
         array[3] = (byte)c(array);
         return array;
     }
     
-    public static byte[] a(final int n, final int n2, final SystemParameter.StepsSensitivity stepsSensitivity) {
+    public static byte[] setCalorieBytes(final int n, final int n2, final SystemParameter.StepsSensitivity stepsSensitivity) {
         final byte[] array = { -117, (byte)(n & 0x7F), (byte)(n >> 7 & 0x7F), (byte)(n2 & 0x7F), (byte)(n2 >> 7 & 0x1), 0 };
         switch (stepsSensitivity.ordinal()) {
             case 1: {

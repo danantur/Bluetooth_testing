@@ -9,10 +9,11 @@ import android.util.Log;
 import com.ideabus.mylibrary.code.bean.DayStepsData;
 import com.ideabus.mylibrary.code.bean.FiveMinStepsData;
 import com.ideabus.mylibrary.code.bean.PieceData;
+import com.ideabus.mylibrary.code.bean.SdkConstants;
 import com.ideabus.mylibrary.code.bean.SpO2PointData;
+import com.ideabus.mylibrary.code.bean.Spo2Data;
 import com.ideabus.mylibrary.code.bean.SystemParameter;
-import com.ideabus.mylibrary.code.bean.g;
-import com.ideabus.mylibrary.code.callback.CommunicateFailCallback;
+import com.ideabus.mylibrary.code.bean.WaveData;
 import com.ideabus.mylibrary.code.callback.DeleteDataCallback;
 import com.ideabus.mylibrary.code.callback.GetStorageModeCallback;
 import com.ideabus.mylibrary.code.callback.RealtimeCallback;
@@ -23,6 +24,7 @@ import com.ideabus.mylibrary.code.callback.SetStepsTimeCallback;
 import com.ideabus.mylibrary.code.callback.SetWeightCallback;
 import com.ideabus.mylibrary.code.callback.StorageModeCallback;
 import com.ideabus.mylibrary.code.connect.ContecSdk;
+import com.ideabus.mylibrary.code.tools.DataClassesParseUtils;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -53,18 +55,18 @@ public class CommunicateWatches extends CommunicateBasic
             this.realtimeCallback = new WeakReference<>(realtimeCallback).get();
         }
         this.realtimeStarted = true;
-        this.writeBytes(ParseUtils.realtimeBytes(0));
+        this.writeBytes(ParseUtils.startRealtimeBytes(0));
         this.setWaveTimeout(this.realtimeCallback);
         this.sleep(1000);
         this.currentOperationCode = 4;
         Log.e("h", Integer.toString(1));
-        this.writeBytes(ParseUtils.realtimeBytes(1));
+        this.writeBytes(ParseUtils.startRealtimeBytes(1));
         this.setSpo2Timeout(this.realtimeCallback);
-        if (this.ak == null) {
-            (this.ak = new Timer()).schedule(new TimerTask() {
+        if (this.realtimePingTimer == null) {
+            (this.realtimePingTimer = new Timer()).schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    CommunicateWatches.this.writeBytes(ParseUtils.realtimeBytes());
+                    CommunicateWatches.this.writeBytes(ParseUtils.realtimePingBytes());
                 }
             }, 5500L, 4500L);
         }
@@ -75,13 +77,13 @@ public class CommunicateWatches extends CommunicateBasic
         if (this.communicating) {
             return;
         }
-        this.writeBytes(ParseUtils.realtimeBytes(127));
+        this.writeBytes(ParseUtils.startRealtimeBytes(127));
         this.errorCode = 10158463;
-        if (this.currentOperationCode == 4) {
-            this.setCommunicateErrorTimer((CommunicateFailCallback)this.realtimeCallback);
+        if (this.currentOperationCode == SdkConstants.OPERATE_START_REALTIME) {
+            this.setCommunicateErrorTimer(this.realtimeCallback);
         }
-        else if (this.currentOperationCode == 7) {
-            this.setCommunicateErrorTimer((CommunicateFailCallback)this.realtimeSpO2Callback);
+        else if (this.currentOperationCode == SdkConstants.OPERATE_START_REALTIME_SPO2) {
+            this.setCommunicateErrorTimer(this.realtimeSpO2Callback);
         }
     }
     
@@ -103,7 +105,7 @@ public class CommunicateWatches extends CommunicateBasic
     public void deleteData(final DeleteDataCallback referent) {
         this.deleteDataCallback = new WeakReference<>(referent).get();
         this.currentOperationCode = 6;
-        this.writeBytes(ParseUtils.k(0));
+        this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(0));
     }
     
     @Override
@@ -115,13 +117,13 @@ public class CommunicateWatches extends CommunicateBasic
             this.realtimeSpO2Callback = new WeakReference<>(spO2Callback).get();
         }
         this.currentOperationCode = 7;
-        this.writeBytes(ParseUtils.realtimeBytes(1));
+        this.writeBytes(ParseUtils.startRealtimeBytes(1));
         this.m();
-        if (this.ak == null) {
-            (this.ak = new Timer()).schedule(new TimerTask() {
+        if (this.realtimePingTimer == null) {
+            (this.realtimePingTimer = new Timer()).schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    CommunicateWatches.this.writeBytes(ParseUtils.realtimeBytes());
+                    CommunicateWatches.this.writeBytes(ParseUtils.realtimePingBytes());
                 }
             }, 5500L, 4500L);
         }
@@ -156,7 +158,7 @@ public class CommunicateWatches extends CommunicateBasic
     }
     
     protected void c(final byte[] array) {
-        final short[] m = com.ideabus.mylibrary.code.tools.b.m(array);
+        final short[] m = DataClassesParseUtils.m(array);
         if (this.Y != null && (this.ae + 1) * 27 < this.Y.length) {
             for (int i = 27 * this.ae; i < 27 * (this.ae + 1); ++i) {
                 this.Y[i] = m[i - 27 * this.ae];
@@ -172,12 +174,12 @@ public class CommunicateWatches extends CommunicateBasic
             this.ae = 0;
             this.writeBytes(ParseUtils.i(1));
             this.errorCode = 10486017;
-            this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+            this.setCommunicateErrorTimer(this.communicateCallback);
         }
     }
     
     protected void d(final byte[] array) {
-        final short[] m = com.ideabus.mylibrary.code.tools.b.m(array);
+        final short[] m = DataClassesParseUtils.m(array);
         if (this.Z != null && (this.ae + 1) * 27 < this.Z.length) {
             for (int i = this.ae * 27; i < (this.ae + 1) * 27; ++i) {
                 this.Z[i] = (m[i - this.ae * 27] & 0x7F);
@@ -201,7 +203,7 @@ public class CommunicateWatches extends CommunicateBasic
         this.b(b);
         this.onEachPieceDataResult(b);
         if (ContecSdk.isDelete) {
-            this.writeBytes(ParseUtils.k(0));
+            this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(0));
         }
         else {
             this.e();
@@ -213,8 +215,8 @@ public class CommunicateWatches extends CommunicateBasic
     
     private void b(final PieceData pieceData) {
         pieceData.setDataType(this.dataTypeInt);
-        pieceData.setTotalNumber(this.D);
-        pieceData.setCaseCount(this.N);
+        pieceData.setTotalNumber(this.totalNumber);
+        pieceData.setCaseCount(this.caseCount);
         pieceData.setSupportPI(0);
         pieceData.setLength(this.I);
         pieceData.setStartTime(this.ag);
@@ -233,9 +235,9 @@ public class CommunicateWatches extends CommunicateBasic
     }
     
     public void l() {
-        if (this.ak != null) {
-            this.ak.cancel();
-            this.ak = null;
+        if (this.realtimePingTimer != null) {
+            this.realtimePingTimer.cancel();
+            this.realtimePingTimer = null;
         }
     }
     
@@ -245,7 +247,7 @@ public class CommunicateWatches extends CommunicateBasic
             (this.realtimeDelayTimer = new Timer()).schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    CommunicateWatches.this.writeBytes(ParseUtils.realtimeBytes(1));
+                    CommunicateWatches.this.writeBytes(ParseUtils.startRealtimeBytes(1));
                     CommunicateWatches.this.setSpo2Timeout(CommunicateWatches.this.realtimeSpO2Callback);
                 }
             }, 5000L);
@@ -285,7 +287,7 @@ public class CommunicateWatches extends CommunicateBasic
                                     return;
                                 }
                                 CommunicateWatches.this.setWaveTimeout(CommunicateWatches.this.realtimeCallback);
-                                final g b = com.ideabus.mylibrary.code.tools.b.b(this.bytes);
+                                final WaveData b = DataClassesParseUtils.parseWaveData(this.bytes);
                                 if (CommunicateWatches.this.realtimeCallback == null) {
                                     continue;
                                 }
@@ -298,7 +300,7 @@ public class CommunicateWatches extends CommunicateBasic
                                     return;
                                 }
                                 CommunicateWatches.this.resetRealtimeDelayTimer();
-                                final com.ideabus.mylibrary.code.bean.f d = com.ideabus.mylibrary.code.tools.b.d(this.bytes);
+                                final Spo2Data d = DataClassesParseUtils.parseSpo2Data(this.bytes);
                                 if (CommunicateWatches.this.realtimeCallback != null) {
                                     CommunicateWatches.this.setSpo2Timeout(CommunicateWatches.this.realtimeCallback);
                                     CommunicateWatches.this.realtimeCallback.onSpo2Data(d.a(), d.c(), d.b(), d.d());
@@ -342,7 +344,7 @@ public class CommunicateWatches extends CommunicateBasic
                             }
                             CommunicateWatches.this.errorCode = 8585475;
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
-                            CommunicateWatches.this.writeBytes(ParseUtils.d());
+                            CommunicateWatches.this.writeBytes(ParseUtils.currentDateTimeBytes());
                             continue;
                         }
                         case -13: {
@@ -350,7 +352,7 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            CommunicateWatches.this.writeBytes(ParseUtils.a(0, 24));
+                            CommunicateWatches.this.writeBytes(ParseUtils.setStepsTimeBytes(0, 24));
                             CommunicateWatches.this.errorCode = 8651012;
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                             continue;
@@ -384,10 +386,10 @@ public class CommunicateWatches extends CommunicateBasic
                                     continue;
                                 }
                                 if ((this.bytes[1] & 0x7) == 0x0) {
-                                    CommunicateWatches.this.z = n;
-                                    if (CommunicateWatches.this.z > 0) {
+                                    CommunicateWatches.this.spo2DataInfo = n;
+                                    if (CommunicateWatches.this.spo2DataInfo > 0) {
                                         CommunicateWatches.this.spo2PointDataArray = (ArrayList<SpO2PointData>)new ArrayList();
-                                        CommunicateWatches.this.writeBytes(ParseUtils.b(0));
+                                        CommunicateWatches.this.writeBytes(ParseUtils.pointSpo2Bytes(0));
                                         CommunicateWatches.this.errorCode = 9502976;
                                         CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                         continue;
@@ -398,10 +400,10 @@ public class CommunicateWatches extends CommunicateBasic
                                     continue;
                                 }
                                 else if ((this.bytes[1] & 0x7) == 0x1) {
-                                    CommunicateWatches.this.A = n;
-                                    if (CommunicateWatches.this.A > 0) {
+                                    CommunicateWatches.this.dayStepsDataInfo = n;
+                                    if (CommunicateWatches.this.dayStepsDataInfo > 0) {
                                         CommunicateWatches.this.dayStepsData = (ArrayList<DayStepsData>)new ArrayList();
-                                        CommunicateWatches.this.writeBytes(ParseUtils.c(0));
+                                        CommunicateWatches.this.writeBytes(ParseUtils.dayStepsBytes(0));
                                         CommunicateWatches.this.errorCode = 9568512;
                                         CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                         continue;
@@ -412,10 +414,10 @@ public class CommunicateWatches extends CommunicateBasic
                                     continue;
                                 }
                                 else if ((this.bytes[1] & 0x7) == 0x2) {
-                                    CommunicateWatches.this.B = n;
-                                    if (CommunicateWatches.this.B > 0) {
+                                    CommunicateWatches.this.fiveMinStepsDataInfo = n;
+                                    if (CommunicateWatches.this.fiveMinStepsDataInfo > 0) {
                                         CommunicateWatches.this.fiveMinStepsDataArray = (ArrayList<FiveMinStepsData>)new ArrayList();
-                                        CommunicateWatches.this.writeBytes(ParseUtils.d(1));
+                                        CommunicateWatches.this.writeBytes(ParseUtils.pieceInfoFiveMinStepsBytes(1));
                                         CommunicateWatches.this.errorCode = 9437442;
                                         CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                         continue;
@@ -448,37 +450,37 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            CommunicateWatches.this.spo2PointDataArray.add(com.ideabus.mylibrary.code.tools.b.e(this.bytes));
-                            if (CommunicateWatches.this.E == 10) {
-                                CommunicateWatches.this.E = 0;
+                            CommunicateWatches.this.spo2PointDataArray.add(DataClassesParseUtils.parseSpo2Point(this.bytes));
+                            if (CommunicateWatches.this.dataPieceNumber == 10) {
+                                CommunicateWatches.this.dataPieceNumber = 0;
                             }
-                            if (CommunicateWatches.this.E != (this.bytes[1] & 0xF)) {
+                            if (CommunicateWatches.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
                                 CommunicateWatches.this.sleep(500);
                                 if (inputData != null) {
                                     inputData.clear();
                                 }
-                                CommunicateWatches.this.E = 10;
-                                CommunicateWatches.this.writeBytes(ParseUtils.b(2));
+                                CommunicateWatches.this.dataPieceNumber = 10;
+                                CommunicateWatches.this.writeBytes(ParseUtils.pointSpo2Bytes(2));
                                 CommunicateWatches.this.errorCode = 9502976;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
-                            CommunicateWatches.this.E++;
-                            if (CommunicateWatches.this.E == 10 && (this.bytes[1] & 0x40) == 0x0) {
-                                CommunicateWatches.this.writeBytes(ParseUtils.b(1));
+                            CommunicateWatches.this.dataPieceNumber++;
+                            if (CommunicateWatches.this.dataPieceNumber == 10 && (this.bytes[1] & 0x40) == 0x0) {
+                                CommunicateWatches.this.writeBytes(ParseUtils.pointSpo2Bytes(1));
                                 CommunicateWatches.this.errorCode = 9502976;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
                             if ((this.bytes[1] & 0x40) != 0x0) {
                                 if (ContecSdk.isDelete) {
-                                    CommunicateWatches.this.writeBytes(ParseUtils.b(127));
+                                    CommunicateWatches.this.writeBytes(ParseUtils.pointSpo2Bytes(127));
                                 }
                                 else {
-                                    CommunicateWatches.this.writeBytes(ParseUtils.b(126));
+                                    CommunicateWatches.this.writeBytes(ParseUtils.pointSpo2Bytes(126));
                                 }
                                 CommunicateWatches.this.sleep(500);
-                                CommunicateWatches.this.E = 0;
+                                CommunicateWatches.this.dataPieceNumber = 0;
                                 CommunicateWatches.this.writeBytes(ParseUtils.dataStorageBytes(1));
                                 CommunicateWatches.this.errorCode = 9437441;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
@@ -493,37 +495,37 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            CommunicateWatches.this.dayStepsData.add(com.ideabus.mylibrary.code.tools.b.f(this.bytes));
-                            if (CommunicateWatches.this.E == 10) {
-                                CommunicateWatches.this.E = 0;
+                            CommunicateWatches.this.dayStepsData.add(DataClassesParseUtils.parseDaySteps(this.bytes));
+                            if (CommunicateWatches.this.dataPieceNumber == 10) {
+                                CommunicateWatches.this.dataPieceNumber = 0;
                             }
-                            if (CommunicateWatches.this.E != (this.bytes[1] & 0xF)) {
+                            if (CommunicateWatches.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
                                 CommunicateWatches.this.sleep(500);
                                 if (inputData != null) {
                                     inputData.clear();
                                 }
-                                CommunicateWatches.this.E = 10;
-                                CommunicateWatches.this.writeBytes(ParseUtils.c(2));
+                                CommunicateWatches.this.dataPieceNumber = 10;
+                                CommunicateWatches.this.writeBytes(ParseUtils.dayStepsBytes(2));
                                 CommunicateWatches.this.errorCode = 9568512;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
-                            CommunicateWatches.this.E++;
-                            if (CommunicateWatches.this.E == 10 && (this.bytes[1] & 0x40) == 0x0) {
-                                CommunicateWatches.this.writeBytes(ParseUtils.c(1));
+                            CommunicateWatches.this.dataPieceNumber++;
+                            if (CommunicateWatches.this.dataPieceNumber == 10 && (this.bytes[1] & 0x40) == 0x0) {
+                                CommunicateWatches.this.writeBytes(ParseUtils.dayStepsBytes(1));
                                 CommunicateWatches.this.errorCode = 9568512;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
                             if ((this.bytes[1] & 0x40) != 0x0) {
                                 if (ContecSdk.isDelete) {
-                                    CommunicateWatches.this.writeBytes(ParseUtils.c(127));
+                                    CommunicateWatches.this.writeBytes(ParseUtils.dayStepsBytes(127));
                                 }
                                 else {
-                                    CommunicateWatches.this.writeBytes(ParseUtils.c(126));
+                                    CommunicateWatches.this.writeBytes(ParseUtils.dayStepsBytes(126));
                                 }
                                 CommunicateWatches.this.sleep(500);
-                                CommunicateWatches.this.E = 0;
+                                CommunicateWatches.this.dataPieceNumber = 0;
                                 CommunicateWatches.this.errorCode = 9634048;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 CommunicateWatches.this.writeBytes(ParseUtils.dataStorageBytes(2));
@@ -547,7 +549,7 @@ public class CommunicateWatches extends CommunicateBasic
                             CommunicateWatches.this.fiveMinStepsData.setDay(day);
                             CommunicateWatches.this.fiveMinStepsData.setLength(length);
                             CommunicateWatches.this.ar = new short[length * 2];
-                            CommunicateWatches.this.writeBytes(ParseUtils.e(0));
+                            CommunicateWatches.this.writeBytes(ParseUtils.fiveMinStepsInfoBytes(0));
                             CommunicateWatches.this.errorCode = 9699584;
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                             continue;
@@ -557,9 +559,9 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            final short[] h = com.ideabus.mylibrary.code.tools.b.h(this.bytes);
-                            if (CommunicateWatches.this.E == 10) {
-                                CommunicateWatches.this.E = 0;
+                            final short[] h = DataClassesParseUtils.h(this.bytes);
+                            if (CommunicateWatches.this.dataPieceNumber == 10) {
+                                CommunicateWatches.this.dataPieceNumber = 0;
                             }
                             if (null != CommunicateWatches.this.ar && (CommunicateWatches.this.ae + 1) * 6 < CommunicateWatches.this.ar.length) {
                                 for (int i = CommunicateWatches.this.ae * 6; i < (CommunicateWatches.this.ae + 1) * 6; ++i) {
@@ -571,13 +573,13 @@ public class CommunicateWatches extends CommunicateBasic
                                     CommunicateWatches.this.ar[j] = h[j - CommunicateWatches.this.ae * 6];
                                 }
                             }
-                            if (CommunicateWatches.this.E != (this.bytes[1] & 0xF)) {
+                            if (CommunicateWatches.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
                                 continue;
                             }
-                            CommunicateWatches.this.E++;
+                            CommunicateWatches.this.dataPieceNumber++;
                             CommunicateWatches.this.ae++;
-                            if (CommunicateWatches.this.E == 10 && (this.bytes[1] & 0x40) == 0x0) {
-                                CommunicateWatches.this.writeBytes(ParseUtils.e(1));
+                            if (CommunicateWatches.this.dataPieceNumber == 10 && (this.bytes[1] & 0x40) == 0x0) {
+                                CommunicateWatches.this.writeBytes(ParseUtils.fiveMinStepsInfoBytes(1));
                                 CommunicateWatches.this.errorCode = 9699584;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
@@ -585,19 +587,19 @@ public class CommunicateWatches extends CommunicateBasic
                             if ((this.bytes[1] & 0x40) == 0x0 || CommunicateWatches.this.ae * 6 < CommunicateWatches.this.ar.length) {
                                 continue;
                             }
-                            CommunicateWatches.this.E = 0;
+                            CommunicateWatches.this.dataPieceNumber = 0;
                             CommunicateWatches.this.ae = 0;
                             CommunicateWatches.this.fiveMinStepsData.setStepFiveDataBean(CommunicateWatches.this.ar);
                             CommunicateWatches.this.fiveMinStepsDataArray.add(CommunicateWatches.this.fiveMinStepsData);
                             if (ContecSdk.isDelete) {
-                                CommunicateWatches.this.writeBytes(ParseUtils.e(127));
+                                CommunicateWatches.this.writeBytes(ParseUtils.fiveMinStepsInfoBytes(127));
                             }
                             else {
-                                CommunicateWatches.this.writeBytes(ParseUtils.e(126));
+                                CommunicateWatches.this.writeBytes(ParseUtils.fiveMinStepsInfoBytes(126));
                             }
                             CommunicateWatches.this.sleep(500);
-                            if (CommunicateWatches.this.fiveMinStepsDataArray.size() < CommunicateWatches.this.B) {
-                                CommunicateWatches.this.writeBytes(ParseUtils.d(1));
+                            if (CommunicateWatches.this.fiveMinStepsDataArray.size() < CommunicateWatches.this.fiveMinStepsDataInfo) {
+                                CommunicateWatches.this.writeBytes(ParseUtils.pieceInfoFiveMinStepsBytes(1));
                                 CommunicateWatches.this.errorCode = 9634048;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
@@ -613,7 +615,7 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            CommunicateWatches.this.as = com.ideabus.mylibrary.code.tools.b.i(this.bytes);
+                            CommunicateWatches.this.as = DataClassesParseUtils.parseEcgData(this.bytes);
                             CommunicateWatches.this.at = new int[CommunicateWatches.this.as.getSize()];
                             CommunicateWatches.this.writeBytes(ParseUtils.g(0));
                             CommunicateWatches.this.errorCode = 9830656;
@@ -624,9 +626,9 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            final int[] k = com.ideabus.mylibrary.code.tools.b.j(this.bytes);
-                            if (CommunicateWatches.this.E == 10) {
-                                CommunicateWatches.this.E = 0;
+                            final int[] k = DataClassesParseUtils.j(this.bytes);
+                            if (CommunicateWatches.this.dataPieceNumber == 10) {
+                                CommunicateWatches.this.dataPieceNumber = 0;
                             }
                             if (null != CommunicateWatches.this.at && (CommunicateWatches.this.ae + 1) * 6 < CommunicateWatches.this.at.length) {
                                 for (int l = CommunicateWatches.this.ae * 6; l < (CommunicateWatches.this.ae + 1) * 6; ++l) {
@@ -638,10 +640,10 @@ public class CommunicateWatches extends CommunicateBasic
                                     CommunicateWatches.this.at[n2] = k[n2 - CommunicateWatches.this.ae * 6];
                                 }
                             }
-                            if (CommunicateWatches.this.E != (this.bytes[1] & 0xF)) {
+                            if (CommunicateWatches.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
                                 CommunicateWatches.this.sleep(100);
-                                CommunicateWatches.this.ae -= CommunicateWatches.this.E;
-                                CommunicateWatches.this.E = 10;
+                                CommunicateWatches.this.ae -= CommunicateWatches.this.dataPieceNumber;
+                                CommunicateWatches.this.dataPieceNumber = 10;
                                 if (null != CommunicateWatches.this.inputBytes) {
                                     CommunicateWatches.this.inputBytes.clear();
                                 }
@@ -650,9 +652,9 @@ public class CommunicateWatches extends CommunicateBasic
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
-                            CommunicateWatches.this.E++;
+                            CommunicateWatches.this.dataPieceNumber++;
                             CommunicateWatches.this.ae++;
-                            if (CommunicateWatches.this.E == 10 && (this.bytes[1] & 0x40) == 0x0) {
+                            if (CommunicateWatches.this.dataPieceNumber == 10 && (this.bytes[1] & 0x40) == 0x0) {
                                 CommunicateWatches.this.writeBytes(ParseUtils.g(1));
                                 CommunicateWatches.this.errorCode = 9765120;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
@@ -664,7 +666,7 @@ public class CommunicateWatches extends CommunicateBasic
                             CommunicateWatches.this.as.setUploadCount(CommunicateWatches.this.C);
                             CommunicateWatches.this.as.setCurrentCount(CommunicateWatches.this.au);
                             CommunicateWatches.this.as.setEcgData(CommunicateWatches.this.at);
-                            CommunicateWatches.this.E = 0;
+                            CommunicateWatches.this.dataPieceNumber = 0;
                             CommunicateWatches.this.ae = 0;
                             if (ContecSdk.isDelete) {
                                 CommunicateWatches.this.writeBytes(ParseUtils.g(127));
@@ -693,7 +695,7 @@ public class CommunicateWatches extends CommunicateBasic
                                 return;
                             }
                             final int n3 = this.bytes[1] & 0x7;
-                            CommunicateWatches.this.ag = com.ideabus.mylibrary.code.tools.b.k(this.bytes);
+                            CommunicateWatches.this.ag = DataClassesParseUtils.parseDateTimeString(this.bytes);
                             CommunicateWatches.this.I = (((this.bytes[10] & 0x7F) | (this.bytes[11] & 0x7F) << 7 | (this.bytes[12] & 0x7F) << 14) & -1);
                             if (CommunicateWatches.this.I > 0) {
                                 switch (n3) {
@@ -716,7 +718,7 @@ public class CommunicateWatches extends CommunicateBasic
                             }
                             CommunicateWatches.this.e();
                             CommunicateWatches.this.resetCommunicateErrorTimer();
-                            if (CommunicateWatches.this.z != 0 || CommunicateWatches.this.A != 0 || CommunicateWatches.this.B != 0 || CommunicateWatches.this.C != 0) {
+                            if (CommunicateWatches.this.spo2DataInfo != 0 || CommunicateWatches.this.dayStepsDataInfo != 0 || CommunicateWatches.this.fiveMinStepsDataInfo != 0 || CommunicateWatches.this.C != 0) {
                                 CommunicateWatches.this.onDataResultEnd();
                             }
                             else {
@@ -732,7 +734,7 @@ public class CommunicateWatches extends CommunicateBasic
                             }
                             CommunicateWatches.this.resetCommunicateErrorTimer();
                             if (this.bytes[1] == 0) {
-                                CommunicateWatches.this.writeBytes(ParseUtils.k(1));
+                                CommunicateWatches.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(1));
                                 continue;
                             }
                             if (this.bytes[1] != 1) {
