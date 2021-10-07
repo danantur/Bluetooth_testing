@@ -4,6 +4,8 @@
 
 package com.ideabus.mylibrary.code.base;
 
+import android.util.Log;
+
 import com.ideabus.mylibrary.code.bean.SdkConstants;
 import com.ideabus.mylibrary.code.communicate.ParseUtils;
 import com.ideabus.mylibrary.code.bean.DayStepsData;
@@ -28,6 +30,7 @@ import com.ideabus.mylibrary.code.callback.StorageModeCallback;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -60,7 +63,7 @@ public abstract class CommunicateBase
     protected int spo2DataInfo;
     protected int dayStepsDataInfo;
     protected int fiveMinStepsDataInfo;
-    protected int C;
+    protected int uploadCount;
     protected int totalNumber;
     protected int dataPieceNumber;
     protected int errorCode2;
@@ -102,9 +105,9 @@ public abstract class CommunicateBase
     protected ArrayList<FiveMinStepsData> fiveMinStepsDataArray;
     protected FiveMinStepsData fiveMinStepsData;
     protected short[] ar;
-    protected EcgData as;
-    protected int[] at;
-    protected int au;
+    protected EcgData ecgData;
+    protected int[] ecgDataArray;
+    protected int currentCount;
     
     public CommunicateBase() {
         this.connected = false;
@@ -117,7 +120,7 @@ public abstract class CommunicateBase
         this.spo2DataInfo = 0;
         this.dayStepsDataInfo = 0;
         this.fiveMinStepsDataInfo = 0;
-        this.C = 0;
+        this.uploadCount = 0;
         this.totalNumber = 1;
         this.dataPieceNumber = 10;
         this.errorCode2 = 0;
@@ -158,9 +161,9 @@ public abstract class CommunicateBase
         this.fiveMinStepsDataArray = null;
         this.fiveMinStepsData = null;
         this.ar = null;
-        this.as = null;
-        this.at = null;
-        this.au = 1;
+        this.ecgData = null;
+        this.ecgDataArray = null;
+        this.currentCount = 1;
     }
     
     public void init() {
@@ -171,7 +174,7 @@ public abstract class CommunicateBase
         this.spo2DataInfo = 0;
         this.dayStepsDataInfo = 0;
         this.fiveMinStepsDataInfo = 0;
-        this.C = 0;
+        this.uploadCount = 0;
         this.dataPieceNumber = 10;
         this.errorCode2 = 0;
         this.G = 0;
@@ -213,6 +216,7 @@ public abstract class CommunicateBase
     
     public void writeBytes(final byte[] array) {
         if (this.connectBase != null) {
+            Log.e("write", Arrays.toString(array));
             this.connectBase.writeBytes(array);
         }
     }

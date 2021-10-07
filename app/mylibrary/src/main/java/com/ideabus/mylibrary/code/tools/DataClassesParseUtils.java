@@ -198,16 +198,16 @@ public class DataClassesParseUtils
             }
         }
         final int size = ((array[15] & 0x7F) | (array[16] & 0x7F) << 7) & 0xFFFF;
-        ecgData.setYear(year);
-        ecgData.setMonth(month);
-        ecgData.setDay(day);
-        ecgData.setHour(hour);
-        ecgData.setMin(min);
-        ecgData.setSec(sec);
-        ecgData.setPr(pr);
-        ecgData.setChineseResult(chineseResult);
-        ecgData.setEnglishResult(englishResult);
-        ecgData.setSize(size);
+        ecgData.year = year;
+        ecgData.month = month;
+        ecgData.day = day;
+        ecgData.hour = hour;
+        ecgData.min = min;
+        ecgData.sec = sec;
+        ecgData.pr = pr;
+        ecgData.chineseResult = chineseResult;
+        ecgData.englishResult = englishResult;
+        ecgData.size = size;
         return ecgData;
     }
     

@@ -3,4 +3,23 @@
     <string name="title_activity_main2"> </string>
     <string name="main_button">Начать поиск устройств</string>
     <string name="stop_button">Остановить</string>
+
+    <string name="connect">Подключиться</string>
+    <string name="disconnect">Отключиться</string>
+
+    <string name="communicate">Communicate</string>
+
+    <string name="start_spo2_realtime">Start Spo2 Realtime</string>
+    <string name="start_realtime">Start Realtime</string>
+    <string name="stop_realtime">Stop Realtime</string>
+
+    <string name="get_storage_mode">Get Storage Mode</string>
+
+    <string name="set_calorie">Set Calorie</string>
+    <string name="set_data_storage_info">Set Data Storage Info</string>
+    <string name="set_device_storage_mode">Set Device Storage Mode</string>
+    <string name="set_weight">Set Weight</string>
+    <string name="set_steps_time">Set Steps Time</string>
+
+    <string name="delete_data">Delete Data</string>
 </resources>

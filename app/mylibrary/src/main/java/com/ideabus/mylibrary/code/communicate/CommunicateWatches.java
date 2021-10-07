@@ -431,8 +431,8 @@ public class CommunicateWatches extends CommunicateBasic
                                     if ((this.bytes[1] & 0x7) != 0x3) {
                                         continue;
                                     }
-                                    CommunicateWatches.this.C = n;
-                                    if (CommunicateWatches.this.C > 0) {
+                                    CommunicateWatches.this.uploadCount = n;
+                                    if (CommunicateWatches.this.uploadCount > 0) {
                                         CommunicateWatches.this.writeBytes(ParseUtils.f(0));
                                         CommunicateWatches.this.errorCode = 9765120;
                                         CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
@@ -615,8 +615,8 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            CommunicateWatches.this.as = DataClassesParseUtils.parseEcgData(this.bytes);
-                            CommunicateWatches.this.at = new int[CommunicateWatches.this.as.getSize()];
+                            CommunicateWatches.this.ecgData = DataClassesParseUtils.parseEcgData(this.bytes);
+                            CommunicateWatches.this.ecgDataArray = new int[CommunicateWatches.this.ecgData.size];
                             CommunicateWatches.this.writeBytes(ParseUtils.g(0));
                             CommunicateWatches.this.errorCode = 9830656;
                             continue;
@@ -630,14 +630,14 @@ public class CommunicateWatches extends CommunicateBasic
                             if (CommunicateWatches.this.dataPieceNumber == 10) {
                                 CommunicateWatches.this.dataPieceNumber = 0;
                             }
-                            if (null != CommunicateWatches.this.at && (CommunicateWatches.this.ae + 1) * 6 < CommunicateWatches.this.at.length) {
+                            if (null != CommunicateWatches.this.ecgDataArray && (CommunicateWatches.this.ae + 1) * 6 < CommunicateWatches.this.ecgDataArray.length) {
                                 for (int l = CommunicateWatches.this.ae * 6; l < (CommunicateWatches.this.ae + 1) * 6; ++l) {
-                                    CommunicateWatches.this.at[l] = k[l - CommunicateWatches.this.ae * 6];
+                                    CommunicateWatches.this.ecgDataArray[l] = k[l - CommunicateWatches.this.ae * 6];
                                 }
                             }
-                            else if (null != CommunicateWatches.this.at) {
-                                for (int n2 = CommunicateWatches.this.ae * 6; n2 < CommunicateWatches.this.at.length; ++n2) {
-                                    CommunicateWatches.this.at[n2] = k[n2 - CommunicateWatches.this.ae * 6];
+                            else if (null != CommunicateWatches.this.ecgDataArray) {
+                                for (int n2 = CommunicateWatches.this.ae * 6; n2 < CommunicateWatches.this.ecgDataArray.length; ++n2) {
+                                    CommunicateWatches.this.ecgDataArray[n2] = k[n2 - CommunicateWatches.this.ae * 6];
                                 }
                             }
                             if (CommunicateWatches.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
@@ -660,12 +660,12 @@ public class CommunicateWatches extends CommunicateBasic
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
-                            if ((this.bytes[1] & 0x40) == 0x0 || CommunicateWatches.this.ae * 6 < CommunicateWatches.this.as.getSize()) {
+                            if ((this.bytes[1] & 0x40) == 0x0 || CommunicateWatches.this.ae * 6 < CommunicateWatches.this.ecgData.size) {
                                 continue;
                             }
-                            CommunicateWatches.this.as.setUploadCount(CommunicateWatches.this.C);
-                            CommunicateWatches.this.as.setCurrentCount(CommunicateWatches.this.au);
-                            CommunicateWatches.this.as.setEcgData(CommunicateWatches.this.at);
+                            CommunicateWatches.this.ecgData.uploadCount = CommunicateWatches.this.uploadCount;
+                            CommunicateWatches.this.ecgData.currentCount = CommunicateWatches.this.currentCount;
+                            CommunicateWatches.this.ecgData.ecgData = CommunicateWatches.this.ecgDataArray;
                             CommunicateWatches.this.dataPieceNumber = 0;
                             CommunicateWatches.this.ae = 0;
                             if (ContecSdk.isDelete) {
@@ -675,15 +675,15 @@ public class CommunicateWatches extends CommunicateBasic
                                 CommunicateWatches.this.writeBytes(ParseUtils.g(126));
                             }
                             CommunicateWatches.this.sleep(500);
-                            CommunicateWatches.this.onEachEcgDataResult(CommunicateWatches.this.as);
-                            if (CommunicateWatches.this.au < CommunicateWatches.this.C) {
-                                CommunicateWatches.this.au++;
+                            CommunicateWatches.this.onEachEcgDataResult(CommunicateWatches.this.ecgData);
+                            if (CommunicateWatches.this.currentCount < CommunicateWatches.this.uploadCount) {
+                                CommunicateWatches.this.currentCount++;
                                 CommunicateWatches.this.writeBytes(ParseUtils.f(1));
                                 CommunicateWatches.this.errorCode = 9765120;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
-                            CommunicateWatches.this.au = 0;
+                            CommunicateWatches.this.currentCount = 0;
                             CommunicateWatches.this.writeBytes(ParseUtils.i(0));
                             CommunicateWatches.this.errorCode = 10486016;
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
@@ -718,7 +718,7 @@ public class CommunicateWatches extends CommunicateBasic
                             }
                             CommunicateWatches.this.e();
                             CommunicateWatches.this.resetCommunicateErrorTimer();
-                            if (CommunicateWatches.this.spo2DataInfo != 0 || CommunicateWatches.this.dayStepsDataInfo != 0 || CommunicateWatches.this.fiveMinStepsDataInfo != 0 || CommunicateWatches.this.C != 0) {
+                            if (CommunicateWatches.this.spo2DataInfo != 0 || CommunicateWatches.this.dayStepsDataInfo != 0 || CommunicateWatches.this.fiveMinStepsDataInfo != 0 || CommunicateWatches.this.uploadCount != 0) {
                                 CommunicateWatches.this.onDataResultEnd();
                             }
                             else {

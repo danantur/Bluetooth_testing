@@ -6,5 +6,5 @@ package com.ideabus.mylibrary.code.callback;
 
 public interface GetStorageModeCallback extends CommunicateFailCallback
 {
-    void onSuccess(final int p0);
+    void onSuccess(final int storageMode);
 }

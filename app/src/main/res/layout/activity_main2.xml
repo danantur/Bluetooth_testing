@@ -7,6 +7,7 @@
     tools:context=".MainActivity2">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/toolbar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Theme.BluetoothTesting.AppBarOverlay">
@@ -24,41 +25,147 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ProgressBar
-            android:id="@+id/loading"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
+        <Button
+            android:id="@+id/connect"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="60dp"
+            android:text="@string/connect"
+            app:layout_constraintEnd_toStartOf="@+id/communicate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="wrap_content"
+        <Button
+            android:id="@+id/communicate"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="200dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            android:visibility="invisible"
-            app:layout_constraintBottom_toTopOf="@+id/textView2"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:text="0%"/>
+            android:layout_marginTop="60dp"
+            android:text="@string/communicate"
+            app:layout_constraintEnd_toStartOf="@+id/disconnect"
+            app:layout_constraintStart_toEndOf="@+id/connect"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="wrap_content"
+        <Button
+            android:id="@+id/disconnect"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="200dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            android:visibility="invisible"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginTop="60dp"
+            android:text="@string/disconnect"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/communicate"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/start_realtime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/start_realtime"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/start_spo2_realtime"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView"
-            android:text="0 bpm" />
+            app:layout_constraintTop_toBottomOf="@+id/connect" />
+
+        <Button
+            android:id="@+id/start_spo2_realtime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/start_spo2_realtime"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/start_realtime"
+            app:layout_constraintEnd_toStartOf="@+id/stop_realtime"
+            app:layout_constraintTop_toBottomOf="@+id/communicate" />
+
+        <Button
+            android:id="@+id/stop_realtime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/stop_realtime"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/start_spo2_realtime"
+            app:layout_constraintTop_toBottomOf="@+id/disconnect"/>
+
+        <Button
+            android:id="@+id/get_storage_mode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/get_storage_mode"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/set_device_storage_mode"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/start_realtime" />
+
+        <Button
+            android:id="@+id/set_device_storage_mode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/set_device_storage_mode"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/get_storage_mode"
+            app:layout_constraintEnd_toStartOf="@+id/set_data_storage_info"
+            app:layout_constraintTop_toBottomOf="@+id/start_spo2_realtime" />
+
+        <Button
+            android:id="@+id/set_data_storage_info"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/set_data_storage_info"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/set_device_storage_mode"
+            app:layout_constraintTop_toBottomOf="@+id/stop_realtime"/>
+
+        <Button
+            android:id="@+id/set_calorie"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/set_calorie"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toStartOf="@+id/set_device_storage_mode"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/get_storage_mode" />
+
+        <Button
+            android:id="@+id/set_weight"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/set_weight"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/get_storage_mode"
+            app:layout_constraintEnd_toStartOf="@+id/set_data_storage_info"
+            app:layout_constraintTop_toBottomOf="@+id/get_storage_mode" />
+
+        <Button
+            android:id="@+id/set_steps_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/set_steps_time"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/set_device_storage_mode"
+            app:layout_constraintTop_toBottomOf="@+id/get_storage_mode"/>
+
+        <Button
+            android:id="@+id/delete_data"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/delete_data"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/get_storage_mode"
+            app:layout_constraintEnd_toStartOf="@+id/set_data_storage_info"
+            app:layout_constraintTop_toBottomOf="@+id/set_weight" />
+
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

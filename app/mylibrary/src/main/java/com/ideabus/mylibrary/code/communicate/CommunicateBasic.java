@@ -822,7 +822,6 @@ public class CommunicateBasic extends CommunicateBase
     }
 
     private void fillData(final PieceData pieceData) {
-        // TODO: понять, по какому признаку деляться наборы данных
         pieceData.dataType = this.dataTypeInt;
         pieceData.totalNumber = this.totalNumber;
         pieceData.caseCount = this.caseCount;
@@ -1215,7 +1214,7 @@ public class CommunicateBasic extends CommunicateBase
                             }
                             else {
                                 if (CommunicateBasic.this.setCalorieCallback != null) {
-                                    CommunicateBasic.this.setCalorieCallback.onFail(1);
+                                    CommunicateBasic.this.setCalorieCallback.onFail(SdkConstants.ERRORCODE_FAIL);
                                     continue;
                                 }
                                 continue;
@@ -1439,8 +1438,8 @@ public class CommunicateBasic extends CommunicateBase
                                 if (!this.isParsing) {
                                     return;
                                 }
-                                final int dataStorageInfo = (this.bytes[2] & 0x7F) | ((this.bytes[3] & 0x7F) << 7 & 0xFFFF);
-                                CommunicateBasic.this.totalNumber = dataStorageInfo;
+                                final int totalNumber = (this.bytes[2] & 0x7F) | ((this.bytes[3] & 0x7F) << 7 & 0xFFFF);
+                                CommunicateBasic.this.totalNumber = totalNumber;
                                 if (CommunicateBasic.this.currentOperationCode == SdkConstants.OPERATE_GET_STORAGE_INFO) {
                                     CommunicateBasic.this.resetCommunicateErrorTimer();
                                     CommunicateBasic.this.stopParseThread();
@@ -1448,7 +1447,7 @@ public class CommunicateBasic extends CommunicateBase
                                     if (CommunicateBasic.this.dataStorageInfoCallback == null) {
                                         continue;
                                     }
-                                    CommunicateBasic.this.dataStorageInfoCallback.onSuccess(SystemParameter.DataStorageInfo.PIECESPO2DATAINFO, dataStorageInfo);
+                                    CommunicateBasic.this.dataStorageInfoCallback.onSuccess(SystemParameter.DataStorageInfo.PIECESPO2DATAINFO, totalNumber);
                                 }
                                 else {
                                     if (CommunicateBasic.this.currentOperationCode != SdkConstants.OPERATE_GET_STORAGE_DATA) {
@@ -1874,7 +1873,7 @@ public class CommunicateBasic extends CommunicateBase
                                 }
                                 final byte a = DataClassesParseUtils.a(array2);
                                 final int n4 = ((this.bytes[5] & 0x7F) | (this.bytes[6] & 0x7F) << 7) & 0xFFFF;
-                                if (this.bytes[2] == 1) {
+                                if (this.bytes[2] == 1) { // SPO2
                                     if (a == this.bytes[23] && n4 == CommunicateBasic.this.ae) {
                                         CommunicateBasic.this.c(this.bytes);
                                     }
@@ -1888,7 +1887,7 @@ public class CommunicateBasic extends CommunicateBase
                                         CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_SPO2_TIMEOUT;
                                     }
                                 }
-                                else if (this.bytes[2] == 2) {
+                                else if (this.bytes[2] == 2) { // PR
                                     if (a == this.bytes[23] && n4 == CommunicateBasic.this.ae) {
                                         CommunicateBasic.this.d(this.bytes);
                                     }
@@ -1899,11 +1898,11 @@ public class CommunicateBasic extends CommunicateBase
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
                                         CommunicateBasic.this.writeBytes(ParseUtils.a(1, 2, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
-                                        CommunicateBasic.this.errorCode = 10289410;
+                                        CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_PR_TIMEOUT;
                                     }
                                 }
                                 else {
-                                    if (this.bytes[2] != 3) {
+                                    if (this.bytes[2] != 3) { // PI
                                         continue;
                                     }
                                     if (a == this.bytes[23] && n4 == CommunicateBasic.this.ae) {
@@ -1913,7 +1912,7 @@ public class CommunicateBasic extends CommunicateBase
                                         CommunicateBasic.this.writeBytes(ParseUtils.a(3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         CommunicateBasic.this.writeBytes(ParseUtils.a(1, 3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
-                                        CommunicateBasic.this.errorCode = 10289411;
+                                        CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_PI_TIMEOUT;
                                     }
                                 }
                                 continue;
@@ -1941,7 +1940,7 @@ public class CommunicateBasic extends CommunicateBase
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
                                         CommunicateBasic.this.writeBytes(ParseUtils.b(3, 1, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
-                                        CommunicateBasic.this.errorCode = 10289921;
+                                        CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_ORIGINAL_SPO2_TIMEOUT;
                                     }
                                 }
                                 else if (this.bytes[2] == 2) {
