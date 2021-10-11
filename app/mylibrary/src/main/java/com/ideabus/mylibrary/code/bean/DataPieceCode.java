@@ -4,6 +4,6 @@
 
 package com.ideabus.mylibrary.code.bean;
 
-public class e extends PieceData
+public class DataPieceCode extends PieceData
 {
 }

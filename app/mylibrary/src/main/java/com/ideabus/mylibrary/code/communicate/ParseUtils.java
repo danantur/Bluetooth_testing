@@ -28,7 +28,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] startRealtimeBytes() {
+    public static byte[] getDeviceVersion() {
         final byte[] array = { -126, 0 };
         array[1] = (byte)c(array);
         return array;
@@ -132,7 +132,7 @@ public class ParseUtils
         return new byte[] { -102, 26 };
     }
     
-    public static byte[] i(final int n) {
+    public static byte[] continueInfoBytes(final int n) {
         final byte[] array = { -96, (byte)n, 0 };
         array[2] = (byte)c(array);
         return array;
@@ -144,19 +144,19 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] a(final int n, final int n2, final int n3, final int n4, final int n5) {
+    public static byte[] checkPieceDifferenceBytes(final int n, final int n2, final int n3, final int n4, final int n5) {
         final byte[] array = { -99, (byte)n, (byte)n2, (byte)n3, (byte)n4, (byte)(n5 & 0x7F), (byte)(n5 >> 7 & 0x7F), 0 };
         array[7] = (byte)c(array);
         return array;
     }
     
-    public static byte[] b(final int n, final int n2, final int n3, final int n4, final int n5) {
+    public static byte[] checkPieceCodeOrOriginalBytes(final int n, final int n2, final int n3, final int n4, final int n5) {
         final byte[] array = { -99, (byte)n, (byte)n2, (byte)n3, (byte)n4, (byte)(n5 & 0x7F), (byte)(n5 >> 7 & 0x7F), (byte)(n5 >> 14 & 0x7F), 0 };
         array[8] = (byte)c(array);
         return array;
     }
     
-    public static byte[] deleteDataAboutSessionBytes(final int n) {
+    public static byte[] clearDeviceDataBytes(final int n) {
         final byte[] array = { -95, 0, 0 };
         array[0] = -95;
         array[1] = (byte)n;
@@ -204,7 +204,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] m() {
+    public static byte[] getStorageDeviceCheckBytes() {
         final byte[] array = { -114, 9, 0 };
         array[2] = (byte)c(array);
         return array;
@@ -222,7 +222,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] b(final byte[] array) {
+    public static byte[] setStorageDeviceCheckBytes(final byte[] array) {
         final byte[] array2 = new byte[11];
         array2[0] = -113;
         array2[1] = 10;
@@ -242,13 +242,13 @@ public class ParseUtils
         return array2;
     }
     
-    public static byte[] b(final int n, final int n2) {
+    public static byte[] continuePrDataBytes(final int n, final int n2) {
         final byte[] array = { -94, (byte)n, (byte)(n2 & 0x7F), (byte)(n2 >> 7 & 0x7F), 0 };
         array[4] = (byte)c(array);
         return array;
     }
     
-    public static byte[] c(final int n, final int n2) {
+    public static byte[] continueSpo2DataBytes(final int n, final int n2) {
         final byte[] array = { -93, (byte)n, (byte)(n2 & 0x7F), (byte)(n2 >> 7 & 0x7F), 0 };
         array[4] = (byte)c(array);
         return array;
@@ -260,7 +260,7 @@ public class ParseUtils
         return array;
     }
     
-    public static byte[] e(final int n, final int n2) {
+    public static byte[] continuePiDataBytes(final int n, final int n2) {
         final byte[] array = { -90, (byte)n, (byte)(n2 & 0x7F), (byte)(n2 >> 7 & 0x7F), 0 };
         array[4] = (byte)c(array);
         return array;

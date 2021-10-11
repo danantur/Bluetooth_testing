@@ -237,7 +237,7 @@ public class DataClassesParseUtils
         return parseDateUnit((array[4] & 0x7F) + 2000) + "-" + parseDateUnit(array[5] & 0xF) + "-" + parseDateUnit(array[6] & 0x1F) + " " + parseDateUnit(array[7] & 0x1F) + ":" + parseDateUnit(array[8] & 0x3F) + ":" + parseDateUnit(array[9] & 0x3F);
     }
     
-    public static short[] m(final byte[] array) {
+    public static short[] spo2Data2Parse(final byte[] array) {
         for (int i = 5; i < 12; ++i) {
             final int n = i;
             array[n] |= (byte)(array[3] << 12 - i & 0x80);
@@ -277,7 +277,7 @@ public class DataClassesParseUtils
         return array2;
     }
     
-    public static short[] n(final byte[] array) {
+    public static short[] parseOrdinaryData(final byte[] array) {
         for (int i = 9; i < 16; ++i) {
             final int n = i;
             array[n] |= (byte)(array[7] << 16 - i & 0x80);
@@ -317,7 +317,7 @@ public class DataClassesParseUtils
         return array2;
     }
     
-    public static short[] o(final byte[] array) {
+    public static short[] parseDataOriginal(final byte[] array) {
         int n = 0;
         final short[] array2 = new short[21];
         for (int i = 8; i < 15; ++i) {

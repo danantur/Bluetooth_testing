@@ -7,6 +7,9 @@ package com.ideabus.mylibrary.code.communicate;
 import android.util.Log;
 
 import com.ideabus.mylibrary.code.base.CommunicateBase;
+import com.ideabus.mylibrary.code.bean.ByteEnums;
+import com.ideabus.mylibrary.code.bean.DataPiece2;
+import com.ideabus.mylibrary.code.bean.DataPieceOriginal;
 import com.ideabus.mylibrary.code.bean.DayStepsData;
 import com.ideabus.mylibrary.code.bean.FiveMinStepsData;
 import com.ideabus.mylibrary.code.bean.PieceData;
@@ -14,12 +17,9 @@ import com.ideabus.mylibrary.code.bean.SdkConstants;
 import com.ideabus.mylibrary.code.bean.SpO2PointData;
 import com.ideabus.mylibrary.code.bean.SystemParameter;
 import com.ideabus.mylibrary.code.bean.WaveData;
-import com.ideabus.mylibrary.code.bean.b;
-import com.ideabus.mylibrary.code.bean.c;
-import com.ideabus.mylibrary.code.bean.d;
-import com.ideabus.mylibrary.code.bean.e;
+import com.ideabus.mylibrary.code.bean.DataPieceCode;
+import com.ideabus.mylibrary.code.bean.DataPiece;
 import com.ideabus.mylibrary.code.bean.Spo2Data;
-import com.ideabus.mylibrary.code.callback.CommunicateFailCallback;
 import com.ideabus.mylibrary.code.callback.DeleteDataCallback;
 import com.ideabus.mylibrary.code.callback.GetStorageModeCallback;
 import com.ideabus.mylibrary.code.callback.RealtimeCallback;
@@ -48,9 +48,9 @@ public class CommunicateBasic extends CommunicateBase
 {
     private String deviceName;
     public ParseThread parseThread;
-    private ArrayList<Integer> aA;
-    private ArrayList<Integer> aB;
-    private ArrayList<Integer> aC;
+    private ArrayList<Integer> spo2CodeData;
+    private ArrayList<Integer> prCodeData;
+    private ArrayList<Integer> piCodeData;
     private boolean aD;
     int aw;
     int ax;
@@ -59,9 +59,9 @@ public class CommunicateBasic extends CommunicateBase
     public CommunicateBasic(String deviceName) {
         this.deviceName = deviceName;
         this.parseThread = null;
-        this.aA = new ArrayList<>();
-        this.aB = new ArrayList<>();
-        this.aC = new ArrayList<>();
+        this.spo2CodeData = new ArrayList<>();
+        this.prCodeData = new ArrayList<>();
+        this.piCodeData = new ArrayList<>();
         this.aD = false;
         this.aw = 0;
         this.ax = 0;
@@ -110,7 +110,7 @@ public class CommunicateBasic extends CommunicateBase
         else {
             this.errorCode = SdkConstants.ERRORCODE_DEVICE_VERSION_TIMEOUT;
             this.setCommunicateErrorTimer(this.deleteDataCallback);
-            this.writeBytes(ParseUtils.startRealtimeBytes());
+            this.writeBytes(ParseUtils.getDeviceVersion());
         }
     }
 
@@ -123,7 +123,7 @@ public class CommunicateBasic extends CommunicateBase
             this.realtimeSpO2Callback = new WeakReference<>(spO2Callback).get();
         }
         this.currentOperationCode = SdkConstants.OPERATE_START_REALTIME_SPO2;
-        this.writeBytes(ParseUtils.startRealtimeBytes());
+        this.writeBytes(ParseUtils.getDeviceVersion());
         this.errorCode = SdkConstants.ERRORCODE_DEVICE_VERSION_TIMEOUT;
         this.setCommunicateErrorTimer(this.realtimeSpO2Callback);
     }
@@ -211,7 +211,7 @@ public class CommunicateBasic extends CommunicateBase
         }
         this.realtimeStarted = true;
         this.currentOperationCode = SdkConstants.OPERATE_START_REALTIME;
-        this.writeBytes(ParseUtils.startRealtimeBytes());
+        this.writeBytes(ParseUtils.getDeviceVersion());
         this.errorCode = SdkConstants.ERRORCODE_DEVICE_VERSION_TIMEOUT;
         this.setCommunicateErrorTimer(this.realtimeCallback);
     }
@@ -245,7 +245,7 @@ public class CommunicateBasic extends CommunicateBase
 
     private void onGetStorageDataSuccess() {
         if (this.storageDataConstant != 0) {
-            if (this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.g) {
+            if (this.dataTypeInt == SystemParameter.DataType.CONTINUEDATA.num) {
                 this.stopParseThread();
                 this.resetCommunicateErrorTimer();
                 this.init();
@@ -274,28 +274,28 @@ public class CommunicateBasic extends CommunicateBase
             }
         }
         else if (this.dataConstant4 != 0) {
-            if (this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.f || this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.e || this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.d || this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.h) {
+            if (this.dataTypeInt == SystemParameter.DataType.DIFFERENCEDATA.num || this.dataTypeInt == SystemParameter.DataType.ORIGINALDATA.num || this.dataTypeInt == SystemParameter.DataType.CODEDATA.num || this.dataTypeInt == SystemParameter.DataType.POINTDATA.num) {
                 this.stopParseThread();
                 this.resetCommunicateErrorTimer();
                 this.onDataResultEmpty();
                 this.init();
                 return;
             }
-            this.dataTypeInt = com.ideabus.mylibrary.code.bean.a.g;
+            this.dataTypeInt = SystemParameter.DataType.CONTINUEDATA.num;
             if ((this.dataConstant4 & 0x1) == 0x1) {
-                this.errorCode = 10486016;
+                this.errorCode = SdkConstants.ERRORCODE_CONTINUE_INFO_PR_TIMEOUT;
                 this.setCommunicateErrorTimer(this.communicateCallback);
-                this.writeBytes(ParseUtils.i(0));
+                this.writeBytes(ParseUtils.continueInfoBytes(0));
             }
             else if ((this.dataConstant4 & 0x2) == 0x2) {
-                this.errorCode = 10486017;
+                this.errorCode = SdkConstants.ERRORCODE_CONTINUE_INFO_SPO2_TIMEOUT;
                 this.setCommunicateErrorTimer(this.communicateCallback);
-                this.writeBytes(ParseUtils.i(1));
+                this.writeBytes(ParseUtils.continueInfoBytes(1));
             }
         }
     }
 
-    private void o(final byte[] array) {
+    private void onDeleteResponse(final byte[] array) {
         this.stopParseThread();
         this.resetCommunicateErrorTimer();
         this.init();
@@ -317,8 +317,8 @@ public class CommunicateBasic extends CommunicateBase
         }
     }
 
-    protected void onDataConstantChange() {
-        if (this.dataConstant < 11) {
+    protected void onDeviceVersionChange() {
+        if (this.deviceVersion < 11) {
             if (this.currentOperationCode == SdkConstants.OPERATE_DELETE_DATA) {
                 this.resetCommunicateErrorTimer();
                 this.stopParseThread();
@@ -349,7 +349,7 @@ public class CommunicateBasic extends CommunicateBase
             }
             else if (this.currentOperationCode == SdkConstants.OPERATE_START_REALTIME_SPO2) {
                 this.writeBytes(ParseUtils.startRealtimeBytes(1));
-                this.errorCode = 10158337;
+                this.errorCode = SdkConstants.ERRORCODE_REALTIME_SPO2_TIMEOUT;
                 this.setRealtimeDelayTimer();
                 if (this.realtimePingTimer == null) {
                     (this.realtimePingTimer = new Timer()).schedule(new TimerTask() {
@@ -402,206 +402,206 @@ public class CommunicateBasic extends CommunicateBase
         }
     }
 
-    protected void l() {
+    protected void checkSpo2DataPieceDifference() {
         this.spo2Data = new int[this.dataLength];
-        this.writeBytes(ParseUtils.a(1, 1, this.M, this.caseCount, 0));
+        this.writeBytes(ParseUtils.checkPieceDifferenceBytes(1, 1, this.dataConstant5, this.caseCount, 0));
         this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_SPO2_TIMEOUT;
         this.setCommunicateErrorTimer(this.communicateCallback);
     }
 
-    protected void m() {
-        this.S = new int[this.dataLength];
-        this.writeBytes(ParseUtils.b(3, 1, this.M, this.caseCount, 0));
+    protected void checkSpo2DataPieceOriginal() {
+        this.spo2DataOriginal = new int[this.dataLength];
+        this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(3, 1, this.dataConstant5, this.caseCount, 0));
         this.errorCode = SdkConstants.ERRORCODE_PIECE_ORIGINAL_SPO2_TIMEOUT;
         this.setCommunicateErrorTimer(this.communicateCallback);
     }
 
-    protected void n() {
-        this.V = new int[this.dataLength];
-        this.writeBytes(ParseUtils.b(4, 1, this.M, this.caseCount, 0));
+    protected void checkSpo2DataPieceCode() {
+        this.spo2DataCode = new int[this.dataLength];
+        this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(4, 1, this.dataConstant5, this.caseCount, 0));
         this.errorCode = SdkConstants.ERRORCODE_PIECE_CODE_SPO2_TIMEOUT;
         this.setCommunicateErrorTimer(this.communicateCallback);
     }
 
-    protected void c(final byte[] array) {
-        final short[] n = DataClassesParseUtils.n(array);
-        if (this.spo2Data != null && (this.ae + 1) * 27 < this.spo2Data.length) {
-            for (int i = this.ae * 27; i < (this.ae + 1) * 27; ++i) {
-                this.spo2Data[i] = (n[i - this.ae * 27] & 0x7F);
+    protected void onSpo2Data(final byte[] array) {
+        final short[] spo2Data = DataClassesParseUtils.parseOrdinaryData(array);
+        if (this.spo2Data != null && (this.dataPieceNumber2 + 1) * 27 < this.spo2Data.length) {
+            for (int i = this.dataPieceNumber2 * 27; i < (this.dataPieceNumber2 + 1) * 27; ++i) {
+                this.spo2Data[i] = (spo2Data[i - this.dataPieceNumber2 * 27] & 0x7F);
             }
         }
         else if (this.spo2Data != null) {
-            for (int j = this.ae * 27; j < this.spo2Data.length; ++j) {
-                this.spo2Data[j] = (n[j - this.ae * 27] & 0x7F);
+            for (int j = this.dataPieceNumber2 * 27; j < this.spo2Data.length; ++j) {
+                this.spo2Data[j] = (spo2Data[j - this.dataPieceNumber2 * 27] & 0x7F);
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.dataLength) {
-            this.ae = 0;
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength) {
+            this.dataPieceNumber2 = 0;
             this.prData = new int[this.dataLength];
-            this.writeBytes(ParseUtils.a(1, 2, this.M, this.caseCount, 0));
-            this.errorCode = 10289410;
+            this.writeBytes(ParseUtils.checkPieceDifferenceBytes(1, 2, this.dataConstant5, this.caseCount, 0));
+            this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_PR_TIMEOUT;
             this.setCommunicateErrorTimer(this.communicateCallback);
         }
     }
 
-    protected void d(final byte[] array) {
-        final short[] n = DataClassesParseUtils.n(array);
-        if (this.prData != null && (this.ae + 1) * 27 < this.prData.length) {
-            for (int i = this.ae * 27; i < (this.ae + 1) * 27; ++i) {
-                this.prData[i] = n[i - this.ae * 27];
+    protected void onPrData(final byte[] array) {
+        final short[] prData = DataClassesParseUtils.parseOrdinaryData(array);
+        if (this.prData != null && (this.dataPieceNumber2 + 1) * 27 < this.prData.length) {
+            for (int i = this.dataPieceNumber2 * 27; i < (this.dataPieceNumber2 + 1) * 27; ++i) {
+                this.prData[i] = prData[i - this.dataPieceNumber2 * 27];
             }
         }
         else if (this.prData != null) {
-            for (int j = this.ae * 27; j < this.prData.length; ++j) {
-                this.prData[j] = n[j - this.ae * 27];
+            for (int j = this.dataPieceNumber2 * 27; j < this.prData.length; ++j) {
+                this.prData[j] = prData[j - this.dataPieceNumber2 * 27];
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.dataLength) {
-            this.ae = 0;
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength) {
+            this.dataPieceNumber2 = 0;
             if (this.supportPI) {
                 this.piData = new int[this.dataLength];
-                this.writeBytes(ParseUtils.a(1, 3, this.M, this.caseCount, 0));
+                this.writeBytes(ParseUtils.checkPieceDifferenceBytes(1, 3, this.dataConstant5, this.caseCount, 0));
                 this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_PI_TIMEOUT;
                 this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                final d d = new d();
-                this.fillData(d);
-                this.onEachPieceDataResult(d);
+                final DataPiece dataPiece = new DataPiece();
+                this.fillData(dataPiece);
+                this.onEachPieceDataResult(dataPiece);
                 if (this.G == 0) {
                     this.writeBytes(ParseUtils.getPieceInfoBytes(1));
                     this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO;
                     this.setCommunicateErrorTimer(this.communicateCallback);
                 }
                 else {
-                    this.s();
+                    this.dataResultEnd();
                 }
             }
         }
     }
 
-    protected void e(final byte[] array) {
-        final short[] n = DataClassesParseUtils.n(array);
-        if (this.piData != null && (this.ae + 1) * 27 < this.piData.length) {
-            for (int i = this.ae * 27; i < (this.ae + 1) * 27; ++i) {
-                this.piData[i] = n[i - this.ae * 27];
+    protected void onPiData(final byte[] array) {
+        final short[] piData = DataClassesParseUtils.parseOrdinaryData(array);
+        if (this.piData != null && (this.dataPieceNumber2 + 1) * 27 < this.piData.length) {
+            for (int i = this.dataPieceNumber2 * 27; i < (this.dataPieceNumber2 + 1) * 27; ++i) {
+                this.piData[i] = piData[i - this.dataPieceNumber2 * 27];
             }
         }
         else if (this.piData != null) {
-            for (int j = this.ae * 27; j < this.piData.length; ++j) {
-                this.piData[j] = n[j - this.ae * 27];
+            for (int j = this.dataPieceNumber2 * 27; j < this.piData.length; ++j) {
+                this.piData[j] = piData[j - this.dataPieceNumber2 * 27];
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.dataLength) {
-            this.ae = 0;
-            final d d = new d();
-            this.fillData(d);
-            this.onEachPieceDataResult(d);
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength) {
+            this.dataPieceNumber2 = 0;
+            final DataPiece dataPiece = new DataPiece();
+            this.fillData(dataPiece);
+            this.onEachPieceDataResult(dataPiece);
             if (this.G == 0) {
                 this.writeBytes(ParseUtils.getPieceInfoBytes(1));
-                this.errorCode = 10223872;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                this.s();
+                this.dataResultEnd();
             }
         }
     }
 
-    protected void f(final byte[] array) {
-        final short[] o = DataClassesParseUtils.o(array);
-        if (this.S != null && (this.ae + 1) * 21 < this.S.length) {
-            for (int i = this.ae * 21; i < (this.ae + 1) * 21; ++i) {
-                this.S[i] = o[i - this.ae * 21];
+    protected void onSpo2DataOriginal(final byte[] array) {
+        final short[] spo2DataOriginal = DataClassesParseUtils.parseDataOriginal(array);
+        if (this.spo2DataOriginal != null && (this.dataPieceNumber2 + 1) * 21 < this.spo2DataOriginal.length) {
+            for (int i = this.dataPieceNumber2 * 21; i < (this.dataPieceNumber2 + 1) * 21; ++i) {
+                this.spo2DataOriginal[i] = spo2DataOriginal[i - this.dataPieceNumber2 * 21];
             }
         }
-        else if (this.S != null) {
-            for (int j = this.ae * 21; j < this.S.length; ++j) {
-                this.S[j] = o[j - this.ae * 21];
+        else if (this.spo2DataOriginal != null) {
+            for (int j = this.dataPieceNumber2 * 21; j < this.spo2DataOriginal.length; ++j) {
+                this.spo2DataOriginal[j] = spo2DataOriginal[j - this.dataPieceNumber2 * 21];
             }
         }
-        ++this.ae;
-        if (this.ae * 21 >= this.dataLength) {
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 21 >= this.dataLength) {
             this.dataPieceNumber = 0;
-            this.ae = 0;
-            this.T = new int[this.dataLength];
-            this.writeBytes(ParseUtils.b(3, 2, this.M, this.caseCount, 0));
-            this.errorCode = 10289922;
-            this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+            this.dataPieceNumber2 = 0;
+            this.prDataOriginal = new int[this.dataLength];
+            this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(3, 2, this.dataConstant5, this.caseCount, 0));
+            this.errorCode = SdkConstants.ERRORCODE_PIECE_ORIGINAL_PR_TIMEOUT;
+            this.setCommunicateErrorTimer(this.communicateCallback);
         }
     }
 
-    protected void g(final byte[] array) {
-        final short[] o = DataClassesParseUtils.o(array);
-        if (this.T != null && (this.ae + 1) * 21 < this.T.length) {
-            for (int i = this.ae * 21; i < (this.ae + 1) * 21; ++i) {
-                this.T[i] = o[i - this.ae * 21];
+    protected void onPrDataOriginal(final byte[] array) {
+        final short[] prDataOriginal = DataClassesParseUtils.parseDataOriginal(array);
+        if (this.prDataOriginal != null && (this.dataPieceNumber2 + 1) * 21 < this.prDataOriginal.length) {
+            for (int i = this.dataPieceNumber2 * 21; i < (this.dataPieceNumber2 + 1) * 21; ++i) {
+                this.prDataOriginal[i] = prDataOriginal[i - this.dataPieceNumber2 * 21];
             }
         }
-        else if (this.T != null) {
-            for (int j = this.ae * 21; j < this.T.length; ++j) {
-                this.T[j] = o[j - this.ae * 21];
+        else if (this.prDataOriginal != null) {
+            for (int j = this.dataPieceNumber2 * 21; j < this.prDataOriginal.length; ++j) {
+                this.prDataOriginal[j] = prDataOriginal[j - this.dataPieceNumber2 * 21];
             }
         }
-        ++this.ae;
-        if (this.ae * 21 >= this.dataLength) {
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 21 >= this.dataLength) {
             this.dataPieceNumber = 0;
-            this.ae = 0;
+            this.dataPieceNumber2 = 0;
             if (this.supportPI) {
-                this.U = new int[this.dataLength];
-                this.writeBytes(ParseUtils.b(3, 3, this.M, this.caseCount, 0));
-                this.errorCode = 10289923;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.piDataOriginal = new int[this.dataLength];
+                this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(3, 3, this.dataConstant5, this.caseCount, 0));
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_ORIGINAL_PI_TIMEOUT;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                final e e = new e();
-                this.fillData(e);
-                this.onEachPieceDataResult(e);
+                final DataPieceOriginal dataPieceOriginal = new DataPieceOriginal();
+                this.fillData(dataPieceOriginal);
+                this.onEachPieceDataResult(dataPieceOriginal);
                 if (this.G == 0) {
                     this.writeBytes(ParseUtils.getPieceInfoBytes(1));
-                    this.errorCode = 10223872;
-                    this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                    this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO;
+                    this.setCommunicateErrorTimer(this.communicateCallback);
                 }
                 else {
-                    this.s();
+                    this.dataResultEnd();
                 }
             }
         }
     }
 
-    protected void h(final byte[] array) {
-        final short[] o = DataClassesParseUtils.o(array);
-        if (this.U != null && (this.ae + 1) * 21 < this.U.length) {
-            for (int i = this.ae * 21; i < (this.ae + 1) * 21; ++i) {
-                this.U[i] = o[i - this.ae * 21];
+    protected void onPiDataOriginal(final byte[] array) {
+        final short[] piDataOriginal = DataClassesParseUtils.parseDataOriginal(array);
+        if (this.piDataOriginal != null && (this.dataPieceNumber2 + 1) * 21 < this.piDataOriginal.length) {
+            for (int i = this.dataPieceNumber2 * 21; i < (this.dataPieceNumber2 + 1) * 21; ++i) {
+                this.piDataOriginal[i] = piDataOriginal[i - this.dataPieceNumber2 * 21];
             }
         }
-        else if (this.T != null) {
-            for (int j = this.ae * 21; j < this.U.length; ++j) {
-                this.U[j] = o[j - this.ae * 21];
+        else if (this.prDataOriginal != null) {
+            for (int j = this.dataPieceNumber2 * 21; j < this.piDataOriginal.length; ++j) {
+                this.piDataOriginal[j] = piDataOriginal[j - this.dataPieceNumber2 * 21];
             }
         }
-        ++this.ae;
-        if (this.ae * 21 >= this.dataLength) {
-            this.ae = 0;
-            final e e = new e();
-            this.fillData(e);
-            this.onEachPieceDataResult(e);
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 21 >= this.dataLength) {
+            this.dataPieceNumber2 = 0;
+            final DataPieceOriginal dataPieceOriginal = new DataPieceOriginal();
+            this.fillData(dataPieceOriginal);
+            this.onEachPieceDataResult(dataPieceOriginal);
             if (this.G == 0) {
                 this.writeBytes(ParseUtils.getPieceInfoBytes(1));
-                this.errorCode = 10223872;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                this.s();
+                this.dataResultEnd();
             }
         }
     }
 
-    public void z(final byte[] array, final ArrayList<Integer> list) {
+    public void parseCodeData(final byte[] array, final ArrayList<Integer> list) {
         final byte[] p2 = DataClassesParseUtils.p(array);
         for (int i = 8; i < 29; ++i) {
             if ((p2[i] & 0xF0) == 0xF0) {
@@ -636,181 +636,175 @@ public class CommunicateBasic extends CommunicateBase
         }
     }
 
-    protected void i(final byte[] array) {
-        this.z(array, this.aA);
-        ++this.ae;
-        if (this.aA.size() >= this.dataLength) {
-            for (int i = 0; i < this.V.length; ++i) {
-                this.V[i] = this.aA.get(i);
+    protected void onSpo2CodeData(final byte[] array) {
+        this.parseCodeData(array, this.spo2CodeData);
+        ++this.dataPieceNumber2;
+        if (this.spo2CodeData.size() >= this.dataLength) {
+            for (int i = 0; i < this.spo2DataCode.length; ++i) {
+                this.spo2DataCode[i] = this.spo2CodeData.get(i);
             }
-            this.ae = 0;
+            this.dataPieceNumber2 = 0;
             this.aw = 0;
             this.ax = 0;
             this.ay = 0;
             this.aD = false;
-            if (null != this.aA) {
-                this.aA.clear();
-            }
+            this.spo2CodeData.clear();
             this.dataPieceNumber = 0;
-            this.W = new int[this.dataLength];
-            this.writeBytes(ParseUtils.b(4, 2, this.M, this.caseCount, 0));
-            this.errorCode = 10290178;
-            this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+            this.prDataCode = new int[this.dataLength];
+            this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(4, 2, this.dataConstant5, this.caseCount, 0));
+            this.errorCode = SdkConstants.ERRORCODE_PIECE_CODE_PR_TIMEOUT;
+            this.setCommunicateErrorTimer(this.communicateCallback);
         }
     }
 
-    protected void j(final byte[] array) {
-        this.z(array, this.aB);
-        ++this.ae;
-        if (this.aB.size() >= this.dataLength) {
-            for (int i = 0; i < this.V.length; ++i) {
-                this.W[i] = this.aB.get(i);
+    protected void onPrCodeData(final byte[] array) {
+        this.parseCodeData(array, this.prCodeData);
+        ++this.dataPieceNumber2;
+        if (this.prCodeData.size() >= this.dataLength) {
+            for (int i = 0; i < this.spo2DataCode.length; ++i) {
+                this.prDataCode[i] = this.prCodeData.get(i);
             }
-            this.ae = 0;
+            this.dataPieceNumber2 = 0;
             this.aw = 0;
             this.ax = 0;
             this.ay = 0;
             this.aD = false;
-            if (null != this.aB) {
-                this.aB.clear();
-            }
+            this.prCodeData.clear();
             if (this.supportPI) {
-                this.X = new int[this.dataLength];
-                this.writeBytes(ParseUtils.b(4, 3, this.M, this.caseCount, 0));
-                this.errorCode = 10290179;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.piDataCode = new int[this.dataLength];
+                this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(4, 3, this.dataConstant5, this.caseCount, 0));
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_CODE_PI_TIMEOUT;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                final c c = new c();
-                this.fillData(c);
-                this.onEachPieceDataResult(c);
+                final DataPieceCode dataPieceCode = new DataPieceCode();
+                this.fillData(dataPieceCode);
+                this.onEachPieceDataResult(dataPieceCode);
                 if (this.G == 0) {
                     this.writeBytes(ParseUtils.getPieceInfoBytes(1));
-                    this.errorCode = 10223872;
-                    this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                    this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO;
+                    this.setCommunicateErrorTimer(this.communicateCallback);
                 }
                 else {
-                    this.s();
+                    this.dataResultEnd();
                 }
             }
         }
     }
 
-    protected void k(final byte[] array) {
-        this.z(array, this.aC);
-        ++this.ae;
-        if (this.aC.size() >= this.dataLength) {
-            for (int i = 0; i < this.X.length; ++i) {
-                this.X[i] = this.aC.get(i);
+    protected void onPiCodeData(final byte[] array) {
+        this.parseCodeData(array, this.piCodeData);
+        ++this.dataPieceNumber2;
+        if (this.piCodeData.size() >= this.dataLength) {
+            for (int i = 0; i < this.piDataCode.length; ++i) {
+                this.piDataCode[i] = this.piCodeData.get(i);
             }
-            this.ae = 0;
+            this.dataPieceNumber2 = 0;
             this.aw = 0;
             this.ax = 0;
             this.ay = 0;
             this.aD = false;
-            if (null != this.aC) {
-                this.aC.clear();
-            }
-            final c c = new c();
-            this.fillData(c);
-            this.onEachPieceDataResult(c);
+            this.piCodeData.clear();
+            final DataPieceCode dataPieceCode = new DataPieceCode();
+            this.fillData(dataPieceCode);
+            this.onEachPieceDataResult(dataPieceCode);
             if (this.G == 0) {
                 this.writeBytes(ParseUtils.getPieceInfoBytes(1));
-                this.errorCode = 10223872;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                this.s();
+                this.dataResultEnd();
             }
         }
     }
 
-    protected void l(final byte[] array) {
-        final short[] m = DataClassesParseUtils.m(array);
-        if (this.Y != null && (this.ae + 1) * 27 < this.Y.length) {
-            for (int i = 27 * this.ae; i < 27 * (this.ae + 1); ++i) {
-                this.Y[i] = m[i - 27 * this.ae];
+    protected void onPrData2(final byte[] array) {
+        final short[] prData2 = DataClassesParseUtils.spo2Data2Parse(array);
+        if (this.prData2 != null && (this.dataPieceNumber2 + 1) * 27 < this.prData2.length) {
+            for (int i = 27 * this.dataPieceNumber2; i < 27 * (this.dataPieceNumber2 + 1); ++i) {
+                this.prData2[i] = prData2[i - 27 * this.dataPieceNumber2];
             }
         }
-        else if (this.Y != null) {
-            for (int j = 27 * this.ae; j < this.Y.length; ++j) {
-                this.Y[j] = m[j - 27 * this.ae];
+        else if (this.prData2 != null) {
+            for (int j = 27 * this.dataPieceNumber2; j < this.prData2.length; ++j) {
+                this.prData2[j] = prData2[j - 27 * this.dataPieceNumber2];
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.I) {
-            this.ae = 0;
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength2) {
+            this.dataPieceNumber2 = 0;
             if ((this.dataConstant4 & 0x2) == 0x2) {
-                this.writeBytes(ParseUtils.i(1));
-                this.errorCode = 10486017;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.writeBytes(ParseUtils.continueInfoBytes(1));
+                this.errorCode = SdkConstants.ERRORCODE_CONTINUE_INFO_SPO2_TIMEOUT;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else if ((this.dataConstant4 & 0x10) == 0x10) {
-                this.writeBytes(ParseUtils.i(4));
-                this.errorCode = 10486020;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.writeBytes(ParseUtils.continueInfoBytes(4));
+                this.errorCode = SdkConstants.ERRORCODE_CONTINUE_INFO_PI_TIMEOUT;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                this.r();
+                this.fillDataPiece2();
             }
         }
     }
 
-    protected void m(final byte[] array) {
-        final short[] m = DataClassesParseUtils.m(array);
-        if (this.Z != null && (this.ae + 1) * 27 < this.Z.length) {
-            for (int i = this.ae * 27; i < (this.ae + 1) * 27; ++i) {
-                this.Z[i] = (m[i - this.ae * 27] & 0x7F);
+    protected void onSpo2Data2(final byte[] array) {
+        final short[] spo2Data2 = DataClassesParseUtils.spo2Data2Parse(array);
+        if (this.spo2Data2 != null && (this.dataPieceNumber2 + 1) * 27 < this.spo2Data2.length) {
+            for (int i = this.dataPieceNumber2 * 27; i < (this.dataPieceNumber2 + 1) * 27; ++i) {
+                this.spo2Data2[i] = (spo2Data2[i - this.dataPieceNumber2 * 27] & 0x7F);
             }
         }
-        else if (this.Z != null) {
-            for (int j = this.ae * 27; j < this.Z.length; ++j) {
-                this.Z[j] = (m[j - this.ae * 27] & 0x7F);
+        else if (this.spo2Data2 != null) {
+            for (int j = this.dataPieceNumber2 * 27; j < this.spo2Data2.length; ++j) {
+                this.spo2Data2[j] = (spo2Data2[j - this.dataPieceNumber2 * 27] & 0x7F);
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.I) {
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength2) {
             this.H = 0;
-            this.ae = 0;
+            this.dataPieceNumber2 = 0;
             if ((this.dataConstant4 & 0x10) == 0x10) {
                 this.supportPI = true;
-                this.writeBytes(ParseUtils.i(4));
-                this.errorCode = 10486020;
-                this.setCommunicateErrorTimer((CommunicateFailCallback)this.communicateCallback);
+                this.writeBytes(ParseUtils.continueInfoBytes(4));
+                this.errorCode = SdkConstants.ERRORCODE_CONTINUE_INFO_PI_TIMEOUT;
+                this.setCommunicateErrorTimer(this.communicateCallback);
             }
             else {
-                this.r();
+                this.fillDataPiece2();
             }
         }
     }
 
-    protected void n(final byte[] array) {
-        final short[] m = DataClassesParseUtils.m(array);
-        if (this.ab != null && (this.ae + 1) * 27 < this.ab.length) {
-            for (int i = this.ae * 27; i < (this.ae + 1) * 27; ++i) {
-                this.ab[i] = m[i - this.ae * 27];
+    protected void onPiData2(final byte[] array) {
+        final short[] piData2 = DataClassesParseUtils.spo2Data2Parse(array);
+        if (this.piData2 != null && (this.dataPieceNumber2 + 1) * 27 < this.piData2.length) {
+            for (int i = this.dataPieceNumber2 * 27; i < (this.dataPieceNumber2 + 1) * 27; ++i) {
+                this.piData2[i] = piData2[i - this.dataPieceNumber2 * 27];
             }
         }
-        else if (this.ab != null) {
-            for (int j = this.ae * 27; j < this.ab.length; ++j) {
-                this.ab[j] = m[j - this.ae * 27];
+        else if (this.piData2 != null) {
+            for (int j = this.dataPieceNumber2 * 27; j < this.piData2.length; ++j) {
+                this.piData2[j] = piData2[j - this.dataPieceNumber2 * 27];
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.I) {
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength2) {
             this.H = 0;
-            this.ae = 0;
-            this.r();
+            this.dataPieceNumber2 = 0;
+            this.fillDataPiece2();
         }
     }
 
-    private void r() {
-        final com.ideabus.mylibrary.code.bean.b b = new com.ideabus.mylibrary.code.bean.b();
-        this.fillData(b);
-        this.onEachPieceDataResult(b);
+    private void fillDataPiece2() {
+        final DataPiece2 dataPiece2 = new DataPiece2();
+        this.fillData(dataPiece2);
+        this.onEachPieceDataResult(dataPiece2);
         if (ContecSdk.isDelete) {
-            this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(0));
-            this.errorCode = 10486016;
+            this.writeBytes(ParseUtils.clearDeviceDataBytes(0));
+            this.errorCode = SdkConstants.ERRORCODE_CONTINUE_INFO_PR_TIMEOUT;
             this.setCommunicateErrorTimer(this.communicateCallback);
         }
         else {
@@ -829,7 +823,7 @@ public class CommunicateBasic extends CommunicateBase
         int[] spo2Data = null;
         int[] prData = null;
         int[] piData = null;
-        if (pieceData instanceof d) {
+        if (pieceData instanceof DataPiece) {
             pieceData.length = this.dataLength;
             pieceData.startTime = this.startTime;
             spo2Data = new int[this.dataLength];
@@ -841,40 +835,40 @@ public class CommunicateBasic extends CommunicateBase
                 System.arraycopy(this.piData, 0, piData, 0, this.dataLength);
             }
         }
-        else if (pieceData instanceof e) {
+        else if (pieceData instanceof DataPieceOriginal) {
             pieceData.length = this.dataLength;
             pieceData.startTime = this.startTime;
             spo2Data = new int[this.dataLength];
             prData = new int[this.dataLength];
-            System.arraycopy(this.S, 0, spo2Data, 0, this.dataLength);
-            System.arraycopy(this.T, 0, prData, 0, this.dataLength);
-            if (this.U != null) {
+            System.arraycopy(this.spo2DataOriginal, 0, spo2Data, 0, this.dataLength);
+            System.arraycopy(this.prDataOriginal, 0, prData, 0, this.dataLength);
+            if (this.piDataOriginal != null) {
                 piData = new int[this.dataLength];
-                System.arraycopy(this.U, 0, piData, 0, this.dataLength);
+                System.arraycopy(this.piDataOriginal, 0, piData, 0, this.dataLength);
             }
         }
-        else if (pieceData instanceof c) {
+        else if (pieceData instanceof DataPieceCode) {
             pieceData.length = this.dataLength;
             pieceData.startTime = this.startTime;
             spo2Data = new int[this.dataLength];
             prData = new int[this.dataLength];
-            System.arraycopy(this.V, 0, spo2Data, 0, this.dataLength);
-            System.arraycopy(this.W, 0, prData, 0, this.dataLength);
-            if (this.X != null) {
+            System.arraycopy(this.spo2DataCode, 0, spo2Data, 0, this.dataLength);
+            System.arraycopy(this.prDataCode, 0, prData, 0, this.dataLength);
+            if (this.piDataCode != null) {
                 piData = new int[this.dataLength];
-                System.arraycopy(this.X, 0, piData, 0, this.dataLength);
+                System.arraycopy(this.piDataCode, 0, piData, 0, this.dataLength);
             }
         }
-        else if (pieceData instanceof b) {
-            pieceData.length = this.I;
-            pieceData.startTime = this.ag;
-            spo2Data = new int[this.I];
-            prData = new int[this.I];
-            System.arraycopy(this.Z, 0, spo2Data, 0, this.I);
-            System.arraycopy(this.Y, 0, prData, 0, this.I);
-            if (this.ab != null) {
-                piData = new int[this.I];
-                System.arraycopy(this.ab, 0, piData, 0, this.I);
+        else if (pieceData instanceof DataPiece2) {
+            pieceData.length = this.dataLength2;
+            pieceData.startTime = this.startTime2;
+            spo2Data = new int[this.dataLength2];
+            prData = new int[this.dataLength2];
+            System.arraycopy(this.spo2Data2, 0, spo2Data, 0, this.dataLength2);
+            System.arraycopy(this.prData2, 0, prData, 0, this.dataLength2);
+            if (this.piData2 != null) {
+                piData = new int[this.dataLength2];
+                System.arraycopy(this.piData2, 0, piData, 0, this.dataLength2);
             }
         }
         pieceData.spo2Data = spo2Data;
@@ -882,10 +876,10 @@ public class CommunicateBasic extends CommunicateBase
         pieceData.piData = piData;
     }
 
-    private void s() {
+    private void dataResultEnd() {
         if (ContecSdk.isDelete) {
             this.writeBytes(ParseUtils.deletePieceOfDataBytes());
-            this.errorCode = 10321791;
+            this.errorCode = SdkConstants.ERRORCODE_PIECE_DELETE_TIMEOUT;
             this.setCommunicateErrorTimer(this.communicateCallback);
         }
         else {
@@ -952,13 +946,13 @@ public class CommunicateBasic extends CommunicateBase
             while (this.isParsing) {
                 if (null != this.inputBytes && !this.inputBytes.isEmpty()) {
                     this.resolveInputData(this.bytes, 0, 1);
-                    if (bytes[0] != - 21 || bytes[1] != 0)
-                        Log.e("read_bytes", bytes[0] + " " + bytes[1]);
                     if (!this.isParsing) {
                         return;
                     }
-                    switch (this.bytes[0]) {
-                        case -21: {
+                    ByteEnums.FirstByteCommands cmd = ByteEnums.FirstByteCommands.getByCmdByte(this.bytes[0]);
+                    if (cmd == null) return;
+                    switch (cmd) {
+                        case REALTIME_DATA: {
                             this.resolveInputData(this.bytes, 1, 1);
                             if (!this.isParsing) {
                                 return;
@@ -990,7 +984,7 @@ public class CommunicateBasic extends CommunicateBase
                                 }
                                 CommunicateBasic.this.resetRealtimeDelayTimer();
                                 Spo2Data spo2Data;
-                                if (CommunicateBasic.this.dataConstant < 11) {
+                                if (CommunicateBasic.this.deviceVersion < 11) {
                                     spo2Data = parseSpo2Data(this.bytes);
                                 }
                                 else {
@@ -1032,7 +1026,7 @@ public class CommunicateBasic extends CommunicateBase
                                 continue;
                             }
                         }
-                        case -16: {
+                        case COMMAND_NOT_SUPPORTED: {
                             this.resolveInputData(this.bytes, 1, 1);
                             if (!this.isParsing) {
                                 return;
@@ -1120,7 +1114,7 @@ public class CommunicateBasic extends CommunicateBase
                                 continue;
                             }
                         }
-                        case -15: {
+                        case CURRENT_DATE_TIME_REQUEST: {
                             this.resolveInputData(this.bytes, 1, 9);
                             if (!this.isParsing) {
                                 return;
@@ -1130,28 +1124,27 @@ public class CommunicateBasic extends CommunicateBase
                             CommunicateBasic.this.writeBytes(ParseUtils.currentDateTimeBytes());
                             continue;
                         }
-                        case -13: {
+                        case DEVICE_VERSION_REQUEST: {
                             this.resolveInputData(this.bytes, 1, 2);
                             if (!this.isParsing) {
                                 return;
                             }
-                            CommunicateBasic.this.errorCode = 8519938;
+                            CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_DEVICE_VERSION_TIMEOUT;
                             CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
-                            CommunicateBasic.this.writeBytes(ParseUtils.startRealtimeBytes());
+                            CommunicateBasic.this.writeBytes(ParseUtils.getDeviceVersion());
                             continue;
                         }
-                        case -14: {
+                        case DEVICE_VERSION: {
                             this.resolveInputData(this.bytes, 1, 7);
                             if (!this.isParsing) {
                                 return;
                             }
                             CommunicateBasic.this.resetCommunicateErrorTimer();
-                            CommunicateBasic.this.dataConstant = (this.bytes[6] & 0x7F);
-                            CommunicateBasic.this.onDataConstantChange();
+                            CommunicateBasic.this.deviceVersion = (this.bytes[6] & 0x7F);
+                            CommunicateBasic.this.onDeviceVersionChange();
                             continue;
                         }
-                        case -12:
-                        case -11: {
+                        case SET_WEIGHT_RESPONSE: {
                             this.resolveInputData(this.bytes, 1, 2);
                             if (!this.isParsing) {
                                 return;
@@ -1174,7 +1167,7 @@ public class CommunicateBasic extends CommunicateBase
                                 continue;
                             }
                         }
-                        case -6: {
+                        case SET_HEIGHT_RESPONSE: {
                             this.resolveInputData(this.bytes, 1, 2);
                             if (!this.isParsing) {
                                 return;
@@ -1197,7 +1190,7 @@ public class CommunicateBasic extends CommunicateBase
                                 continue;
                             }
                         }
-                        case -5: {
+                        case SET_CALORIE_RESPONSE: {
                             this.resolveInputData(this.bytes, 1, 2);
                             if (!this.isParsing) {
                                 return;
@@ -1220,7 +1213,7 @@ public class CommunicateBasic extends CommunicateBase
                                 continue;
                             }
                         }
-                        case -2: {
+                        case CURRENT_STORAGE_STATE: {
                             this.resolveInputData(this.bytes, 1, 1);
                             if (!this.isParsing) {
                                 return;
@@ -1231,7 +1224,6 @@ public class CommunicateBasic extends CommunicateBase
                                     return;
                                 }
                                 final byte[] q = DataClassesParseUtils.q(this.bytes);
-                                Log.e("debug", Arrays.toString(q));
                                 final byte[] array = new byte[7];
                                 CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_SYSTEM_CONFIGURATION_GET_STORAGE_DEVICE_CHECK_TIMEOUT;
                                 if (CommunicateBasic.this.currentOperationCode == SdkConstants.OPERATE_GET_STORAGE_DATA) {
@@ -1240,7 +1232,7 @@ public class CommunicateBasic extends CommunicateBase
                                 else if (CommunicateBasic.this.currentOperationCode == SdkConstants.OPERATE_DELETE_DATA) {
                                     CommunicateBasic.this.deleteData(CommunicateBasic.this.deleteDataCallback);
                                 }
-                                CommunicateBasic.this.writeBytes(ParseUtils.b(array));
+                                CommunicateBasic.this.writeBytes(ParseUtils.setStorageDeviceCheckBytes(array));
                                 CommunicateBasic.this.errorCode2 = SdkConstants.ERRORCODE_SYSTEM_CONFIGURATION_SET_STORAGE_DEVICE_CHECK_TIMEOUT;
                                 continue;
                             }
@@ -1300,7 +1292,7 @@ public class CommunicateBasic extends CommunicateBase
                                 continue;
                             }
                         }
-                        case -1: {
+                        case CURRENT_SYS_CONFIGURATION_OPERATION_STATE: {
                             this.resolveInputData(this.bytes, 1, 2);
                             if (!this.isParsing) {
                                 return;
@@ -1362,7 +1354,7 @@ public class CommunicateBasic extends CommunicateBase
                                 }
                             }
                         }
-                        case -17: {
+                        case DATA_STORAGE_INFO_DATA2: {
                             this.resolveInputData(this.bytes, 1, 7);
                             if (!this.isParsing) {
                                 return;
@@ -1389,13 +1381,13 @@ public class CommunicateBasic extends CommunicateBase
                                     else if (CommunicateBasic.this.currentOperationCode == SdkConstants.OPERATE_GET_STORAGE_DATA) {
                                         CommunicateBasic.this.deleteData(CommunicateBasic.this.deleteDataCallback);
                                     }
-                                    CommunicateBasic.this.writeBytes(ParseUtils.m());
+                                    CommunicateBasic.this.writeBytes(ParseUtils.getStorageDeviceCheckBytes());
                                     continue;
                                 }
                                 if (CommunicateBasic.this.currentOperationCode == SdkConstants.OPERATE_DELETE_DATA) {
                                     CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_DELETE_PR_TIMEOUT;
                                     CommunicateBasic.this.deleteData(CommunicateBasic.this.deleteDataCallback);
-                                    CommunicateBasic.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(0));
+                                    CommunicateBasic.this.writeBytes(ParseUtils.clearDeviceDataBytes(0));
                                     continue;
                                 }
                                 if (CommunicateBasic.this.currentOperationCode == SdkConstants.OPERATE_GET_STORAGE_DATA) {
@@ -1428,7 +1420,7 @@ public class CommunicateBasic extends CommunicateBase
                                 }
                             }
                         }
-                        case -32: {
+                        case DATA_STORAGE_INFO_DATA: {
                             this.resolveInputData(this.bytes, 1, 1);
                             if (!this.isParsing) {
                                 return;
@@ -1520,7 +1512,7 @@ public class CommunicateBasic extends CommunicateBase
                                 continue;
                             }
                         }
-                        case -31: {
+                        case SPO2_PIECE_OF_DATA: {
                             this.resolveInputData(this.bytes, 1, 10);
                             if (!this.isParsing) {
                                 return;
@@ -1588,7 +1580,7 @@ public class CommunicateBasic extends CommunicateBase
                             }
                             continue;
                         }
-                        case -30: {
+                        case DAY_STEPS_PIECE_OF_DATA: {
                             CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                             this.resolveInputData(this.bytes, 1, 10);
                             if (!this.isParsing) {
@@ -1651,7 +1643,7 @@ public class CommunicateBasic extends CommunicateBase
                             }
                             continue;
                         }
-                        case -22: {
+                        case DAY_STEPS_WITH_TARGET_CALORIE_PIECE_OF_DATA: {
                             CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                             this.resolveInputData(this.bytes, 1, 12);
                             if (!this.isParsing) {
@@ -1714,7 +1706,7 @@ public class CommunicateBasic extends CommunicateBase
                             }
                             continue;
                         }
-                        case -29: {
+                        case FIVE_MIN_STEPS_DATA: {
                             CommunicateBasic.this.fiveMinStepsData = new FiveMinStepsData();
                             this.resolveInputData(this.bytes, 1, 8);
                             if (!this.isParsing) {
@@ -1734,7 +1726,7 @@ public class CommunicateBasic extends CommunicateBase
                             CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                             continue;
                         }
-                        case -28: {
+                        case FIVE_MIN_STEPS_PIECE_OF_DATA: {
                             this.resolveInputData(this.bytes, 1, 16);
                             if (!this.isParsing) {
                                 return;
@@ -1744,32 +1736,32 @@ public class CommunicateBasic extends CommunicateBase
                                 if (CommunicateBasic.this.dataPieceNumber == 10) {
                                     CommunicateBasic.this.dataPieceNumber = 0;
                                 }
-                                if (null != CommunicateBasic.this.ar && (CommunicateBasic.this.ae + 1) * 6 < CommunicateBasic.this.ar.length) {
-                                    for (int i = CommunicateBasic.this.ae * 6; i < (CommunicateBasic.this.ae + 1) * 6; ++i) {
-                                        CommunicateBasic.this.ar[i] = h[i - CommunicateBasic.this.ae * 6];
+                                if (null != CommunicateBasic.this.ar && (CommunicateBasic.this.dataPieceNumber2 + 1) * 6 < CommunicateBasic.this.ar.length) {
+                                    for (int i = CommunicateBasic.this.dataPieceNumber2 * 6; i < (CommunicateBasic.this.dataPieceNumber2 + 1) * 6; ++i) {
+                                        CommunicateBasic.this.ar[i] = h[i - CommunicateBasic.this.dataPieceNumber2 * 6];
                                     }
                                 }
                                 else if (null != CommunicateBasic.this.ar) {
-                                    for (int j = CommunicateBasic.this.ae * 6; j < CommunicateBasic.this.ar.length; ++j) {
-                                        CommunicateBasic.this.ar[j] = h[j - CommunicateBasic.this.ae * 6];
+                                    for (int j = CommunicateBasic.this.dataPieceNumber2 * 6; j < CommunicateBasic.this.ar.length; ++j) {
+                                        CommunicateBasic.this.ar[j] = h[j - CommunicateBasic.this.dataPieceNumber2 * 6];
                                     }
                                 }
                                 if (CommunicateBasic.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
                                     continue;
                                 }
                                 CommunicateBasic.this.dataPieceNumber++;
-                                CommunicateBasic.this.ae++;
+                                CommunicateBasic.this.dataPieceNumber2++;
                                 if (CommunicateBasic.this.dataPieceNumber == 10 && (this.bytes[1] & 0x40) == 0x0) {
                                     CommunicateBasic.this.writeBytes(ParseUtils.fiveMinStepsInfoBytes(1));
                                     CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_FIVE_MIN_STEPS_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                 }
                                 else {
-                                    if ((this.bytes[1] & 0x40) == 0x0 || CommunicateBasic.this.ae * 6 < CommunicateBasic.this.ar.length) {
+                                    if ((this.bytes[1] & 0x40) == 0x0 || CommunicateBasic.this.dataPieceNumber2 * 6 < CommunicateBasic.this.ar.length) {
                                         continue;
                                     }
                                     CommunicateBasic.this.dataPieceNumber = 0;
-                                    CommunicateBasic.this.ae = 0;
+                                    CommunicateBasic.this.dataPieceNumber2 = 0;
                                     CommunicateBasic.this.fiveMinStepsData.setStepFiveDataBean(CommunicateBasic.this.ar);
                                     CommunicateBasic.this.fiveMinStepsDataArray.add(CommunicateBasic.this.fiveMinStepsData);
                                     if (ContecSdk.isDelete) {
@@ -1799,20 +1791,15 @@ public class CommunicateBasic extends CommunicateBase
                             }
                             continue;
                         }
-                        case -20: {
+                        case SPO2_PIECE_OF_DATA_CHECK: {
                             this.resolveInputData(this.bytes, 1, 20);
                             if (!this.isParsing) {
                                 return;
                             }
                             CommunicateBasic.this.G = (this.bytes[1] & 0x40);
-                            if ((this.bytes[1] & 0xF) == 0x0) {
-                                CommunicateBasic.this.supportPI = false;
-                            }
-                            else {
-                                CommunicateBasic.this.supportPI = true;
-                            }
-                            CommunicateBasic.this.L = CommunicateBasic.this.caseCount;
-                            CommunicateBasic.this.M = (this.bytes[2] & 0x7F);
+                            CommunicateBasic.this.supportPI = (this.bytes[1] & 0xF) != 0x0;
+                            CommunicateBasic.this.caseCount2 = CommunicateBasic.this.caseCount;
+                            CommunicateBasic.this.dataConstant5 = (this.bytes[2] & 0x7F);
                             CommunicateBasic.this.caseCount = (this.bytes[3] & 0x7F);
                             CommunicateBasic.this.startTime = DataClassesParseUtils.parseDateTimeString2(this.bytes);
                             CommunicateBasic.this.dataLength = (((this.bytes[10] & 0x7F) | (this.bytes[11] & 0x7F) << 7 | (this.bytes[12] & 0x7F) << 14 | (this.bytes[13] & 0x7F) << 21) & -1);
@@ -1823,31 +1810,19 @@ public class CommunicateBasic extends CommunicateBase
                                 CommunicateBasic.this.init();
                                 continue;
                             }
-                            if ((CommunicateBasic.this.dataConstant2 & 0x1) == 0x1 && CommunicateBasic.this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.f) {
-                                CommunicateBasic.this.l();
+                            if ((CommunicateBasic.this.dataConstant2 & 0x4) == 0x4) {
+                                CommunicateBasic.this.dataTypeInt = SystemParameter.DataType.CODEDATA.num;
+                                CommunicateBasic.this.checkSpo2DataPieceCode();
                                 continue;
                             }
-                            if ((CommunicateBasic.this.dataConstant2 & 0x2) == 0x2 && CommunicateBasic.this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.e) {
-                                CommunicateBasic.this.m();
+                            if ((CommunicateBasic.this.dataConstant2 & 0x2) == 0x2) {
+                                CommunicateBasic.this.dataTypeInt = SystemParameter.DataType.ORIGINALDATA.num;
+                                CommunicateBasic.this.checkSpo2DataPieceOriginal();
                                 continue;
                             }
-                            if ((CommunicateBasic.this.dataConstant2 & 0x4) == 0x4 && CommunicateBasic.this.dataTypeInt == com.ideabus.mylibrary.code.bean.a.d) {
-                                CommunicateBasic.this.n();
-                                continue;
-                            }
-                            if ((CommunicateBasic.this.dataConstant2 & 0x4) == 0x4 && CommunicateBasic.this.dataTypeInt == 0) {
-                                CommunicateBasic.this.dataTypeInt = com.ideabus.mylibrary.code.bean.a.d;
-                                CommunicateBasic.this.n();
-                                continue;
-                            }
-                            if ((CommunicateBasic.this.dataConstant2 & 0x2) == 0x2 && CommunicateBasic.this.dataTypeInt == 0) {
-                                CommunicateBasic.this.dataTypeInt = com.ideabus.mylibrary.code.bean.a.e;
-                                CommunicateBasic.this.m();
-                                continue;
-                            }
-                            if ((CommunicateBasic.this.dataConstant2 & 0x1) == 0x1 && CommunicateBasic.this.dataTypeInt == 0) {
-                                CommunicateBasic.this.dataTypeInt = com.ideabus.mylibrary.code.bean.a.f;
-                                CommunicateBasic.this.l();
+                            if ((CommunicateBasic.this.dataConstant2 & 0x1) == 0x1) {
+                                CommunicateBasic.this.dataTypeInt = SystemParameter.DataType.DIFFERENCEDATA.num;
+                                CommunicateBasic.this.checkSpo2DataPieceDifference();
                                 continue;
                             }
                             CommunicateBasic.this.stopParseThread();
@@ -1856,48 +1831,46 @@ public class CommunicateBasic extends CommunicateBase
                             CommunicateBasic.this.init();
                             continue;
                         }
-                        case -19: {
+                        case ORIGINAL_CODE_OR_ORDINARY_DATA: {
                             this.resolveInputData(this.bytes, 1, 1);
                             if (!this.isParsing) {
                                 return;
                             }
-                            if (this.bytes[1] == 1) {
+                            if (this.bytes[1] == 1) { // ORDINARY DATA
                                 CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                 this.resolveInputData(this.bytes, 2, 22);
                                 if (!this.isParsing) {
                                     return;
                                 }
                                 final byte[] array2 = new byte[24];
-                                for (int k = 0; k < 24; ++k) {
-                                    array2[k] = this.bytes[k];
-                                }
+                                System.arraycopy(this.bytes, 0, array2, 0, 24);
                                 final byte a = DataClassesParseUtils.a(array2);
                                 final int n4 = ((this.bytes[5] & 0x7F) | (this.bytes[6] & 0x7F) << 7) & 0xFFFF;
                                 if (this.bytes[2] == 1) { // SPO2
-                                    if (a == this.bytes[23] && n4 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.c(this.bytes);
+                                    if (a == this.bytes[23] && n4 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onSpo2Data(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, 1, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceDifferenceBytes(1, 1, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
                                         CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_SPO2_TIMEOUT;
                                     }
                                 }
                                 else if (this.bytes[2] == 2) { // PR
-                                    if (a == this.bytes[23] && n4 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.d(this.bytes);
+                                    if (a == this.bytes[23] && n4 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onPrData(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(2, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(2, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, 2, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceDifferenceBytes(1, 2, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
                                         CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_PR_TIMEOUT;
                                     }
                                 }
@@ -1905,19 +1878,19 @@ public class CommunicateBasic extends CommunicateBase
                                     if (this.bytes[2] != 3) { // PI
                                         continue;
                                     }
-                                    if (a == this.bytes[23] && n4 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.e(this.bytes);
+                                    if (a == this.bytes[23] && n4 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onPiData(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(3, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, 3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceDifferenceBytes(1, 3, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
                                         CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_DIFFERENCE_PI_TIMEOUT;
                                     }
                                 }
                                 continue;
                             }
-                            else if (this.bytes[1] == 3) {
+                            else if (this.bytes[1] == 3) { // ORIGINAL DATA
                                 CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                 this.resolveInputData(this.bytes, 2, 28);
                                 if (!this.isParsing) {
@@ -1930,53 +1903,53 @@ public class CommunicateBasic extends CommunicateBase
                                 final byte a2 = DataClassesParseUtils.a(array3);
                                 final int n5 = ((this.bytes[3] & 0x7F) | (this.bytes[4] & 0x7F) << 7) & 0xFFFF;
                                 if (this.bytes[2] == 1) {
-                                    if (a2 == this.bytes[29] && n5 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.f(this.bytes);
+                                    if (a2 == this.bytes[29] && n5 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onSpo2DataOriginal(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.b(3, 1, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(3, 1, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
                                         CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_ORIGINAL_SPO2_TIMEOUT;
                                     }
                                 }
                                 else if (this.bytes[2] == 2) {
-                                    if (a2 == this.bytes[29] && n5 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.g(this.bytes);
+                                    if (a2 == this.bytes[29] && n5 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onPrDataOriginal(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(2, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(2, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.b(3, 2, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
-                                        CommunicateBasic.this.errorCode = 10289922;
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(3, 2, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
+                                        CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_ORIGINAL_PR_TIMEOUT;
                                     }
                                 }
                                 else {
                                     if (this.bytes[2] != 3) {
                                         continue;
                                     }
-                                    if (a2 == this.bytes[29] && n5 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.h(this.bytes);
+                                    if (a2 == this.bytes[29] && n5 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onPiDataOriginal(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(3, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.b(3, 3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(3, 3, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
                                         CommunicateBasic.this.errorCode = 10289923;
                                     }
                                 }
                                 continue;
                             }
-                            else if (this.bytes[1] == 4) {
+                            else if (this.bytes[1] == 4) { // CODE DATA
                                 CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                 this.resolveInputData(this.bytes, 2, 28);
                                 if (!this.isParsing) {
@@ -1989,48 +1962,48 @@ public class CommunicateBasic extends CommunicateBase
                                 final byte a3 = DataClassesParseUtils.a(array4);
                                 final int n7 = ((this.bytes[3] & 0x7F) | (this.bytes[4] & 0x7F) << 7) & 0xFFFF;
                                 if (this.bytes[2] == 1) {
-                                    if (a3 == this.bytes[29] && n7 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.i(this.bytes);
+                                    if (a3 == this.bytes[29] && n7 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onSpo2CodeData(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(1, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.b(4, 1, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
-                                        CommunicateBasic.this.errorCode = 10290177;
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(4, 1, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
+                                        CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_CODE_SPO2_TIMEOUT;
                                     }
                                 }
                                 else if (this.bytes[2] == 2) {
-                                    if (a3 == this.bytes[29] && n7 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.j(this.bytes);
+                                    if (a3 == this.bytes[29] && n7 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onPrCodeData(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(2, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(2, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.b(4, 2, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
-                                        CommunicateBasic.this.errorCode = 10290178;
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(4, 2, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
+                                        CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_CODE_PR_TIMEOUT;
                                     }
                                 }
                                 else {
                                     if (this.bytes[2] != 3) {
                                         continue;
                                     }
-                                    if (a3 == this.bytes[29] && n7 == CommunicateBasic.this.ae) {
-                                        CommunicateBasic.this.k(this.bytes);
+                                    if (a3 == this.bytes[29] && n7 == CommunicateBasic.this.dataPieceNumber2) {
+                                        CommunicateBasic.this.onPiCodeData(this.bytes);
                                     }
                                     else {
-                                        CommunicateBasic.this.writeBytes(ParseUtils.a(3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount));
+                                        CommunicateBasic.this.writeBytes(ParseUtils.a(3, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount));
                                         CommunicateBasic.this.sleep(500);
                                         if (CommunicateBasic.this.inputBytes != null) {
                                             CommunicateBasic.this.inputBytes.clear();
                                         }
-                                        CommunicateBasic.this.writeBytes(ParseUtils.b(4, 3, CommunicateBasic.this.M, CommunicateBasic.this.caseCount, CommunicateBasic.this.ae));
-                                        CommunicateBasic.this.errorCode = 10290179;
+                                        CommunicateBasic.this.writeBytes(ParseUtils.checkPieceCodeOrOriginalBytes(4, 3, CommunicateBasic.this.dataConstant5, CommunicateBasic.this.caseCount, CommunicateBasic.this.dataPieceNumber2));
+                                        CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_PIECE_CODE_PI_TIMEOUT;
                                     }
                                 }
                                 continue;
@@ -2068,57 +2041,57 @@ public class CommunicateBasic extends CommunicateBase
                                 }
                             }
                         }
-                        case -48: {
+                        case READY_FOR_TRANSFERRING_2: {
                             this.resolveInputData(this.bytes, 1, 13);
                             if (!this.isParsing) {
                                 return;
                             }
-                            final int n8 = this.bytes[1] & 0x7;
-                            CommunicateBasic.this.ag = DataClassesParseUtils.parseDateTimeString(this.bytes);
-                            if (n8 == 0) {
-                                CommunicateBasic.this.I = (((this.bytes[10] & 0x7F) | (this.bytes[11] & 0x7F) << 7 | (this.bytes[12] & 0x7F) << 14) & -1);
+                            final int dataType = this.bytes[1] & 0x7;
+                            CommunicateBasic.this.startTime2 = DataClassesParseUtils.parseDateTimeString(this.bytes);
+                            if (dataType == 0) {
+                                CommunicateBasic.this.dataLength2 = (((this.bytes[10] & 0x7F) | (this.bytes[11] & 0x7F) << 7 | (this.bytes[12] & 0x7F) << 14) & -1);
                             }
-                            if (CommunicateBasic.this.I == 0) {
+                            if (CommunicateBasic.this.dataLength2 == 0) {
                                 CommunicateBasic.this.stopParseThread();
                                 CommunicateBasic.this.resetCommunicateErrorTimer();
                                 CommunicateBasic.this.onDataResultEmpty();
                                 CommunicateBasic.this.init();
                                 continue;
                             }
-                            switch (n8) {
+                            switch (dataType) {
                                 case 0: {
-                                    CommunicateBasic.this.Y = new int[CommunicateBasic.this.I];
-                                    CommunicateBasic.this.writeBytes(ParseUtils.b(0, 0));
-                                    CommunicateBasic.this.errorCode = 10617088;
+                                    CommunicateBasic.this.prData2 = new int[CommunicateBasic.this.dataLength2];
+                                    CommunicateBasic.this.writeBytes(ParseUtils.continuePrDataBytes(0, 0));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_PR_DATA_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
                                 case 1: {
-                                    CommunicateBasic.this.Z = new int[CommunicateBasic.this.I];
-                                    CommunicateBasic.this.writeBytes(ParseUtils.c(0, 0));
-                                    CommunicateBasic.this.errorCode = 10682624;
+                                    CommunicateBasic.this.spo2Data2 = new int[CommunicateBasic.this.dataLength2];
+                                    CommunicateBasic.this.writeBytes(ParseUtils.continueSpo2DataBytes(0, 0));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_SPO2_DATA_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
                                 case 4: {
-                                    CommunicateBasic.this.ab = new int[CommunicateBasic.this.I];
-                                    CommunicateBasic.this.writeBytes(ParseUtils.e(0, 0));
-                                    CommunicateBasic.this.errorCode = 10879232;
+                                    CommunicateBasic.this.piData2 = new int[CommunicateBasic.this.dataLength2];
+                                    CommunicateBasic.this.writeBytes(ParseUtils.continuePiDataBytes(0, 0));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_PI_DATA_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
                             }
                             continue;
                         }
-                        case -47: {
+                        case PIECE_OF_DATA_DELETED_2: {
                             this.resolveInputData(this.bytes, 1, 3);
                             if (!this.isParsing) {
                                 return;
                             }
                             if (this.bytes[1] == 0) {
                                 if ((CommunicateBasic.this.dataConstant4 & 0x2) == 0x2) {
-                                    CommunicateBasic.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(1));
-                                    CommunicateBasic.this.errorCode = 10551553;
+                                    CommunicateBasic.this.writeBytes(ParseUtils.clearDeviceDataBytes(1));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_DELETE_SPO2_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
@@ -2129,12 +2102,12 @@ public class CommunicateBasic extends CommunicateBase
                                     continue;
                                 }
                                 if ((CommunicateBasic.this.dataConstant4 & 0x10) == 0x10) {
-                                    CommunicateBasic.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(4));
-                                    CommunicateBasic.this.errorCode = 10551556;
+                                    CommunicateBasic.this.writeBytes(ParseUtils.clearDeviceDataBytes(4));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_DELETE_PI_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
-                                CommunicateBasic.this.o(this.bytes);
+                                CommunicateBasic.this.onDeleteResponse(this.bytes);
                                 continue;
                             }
                             else if (this.bytes[1] == 1) {
@@ -2145,12 +2118,12 @@ public class CommunicateBasic extends CommunicateBase
                                     continue;
                                 }
                                 if ((CommunicateBasic.this.dataConstant4 & 0x10) == 0x10) {
-                                    CommunicateBasic.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(4));
-                                    CommunicateBasic.this.errorCode = 10551556;
+                                    CommunicateBasic.this.writeBytes(ParseUtils.clearDeviceDataBytes(4));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_DELETE_PI_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
-                                CommunicateBasic.this.o(this.bytes);
+                                CommunicateBasic.this.onDeleteResponse(this.bytes);
                                 continue;
                             }
                             else if (this.bytes[1] == 2) {
@@ -2158,18 +2131,18 @@ public class CommunicateBasic extends CommunicateBase
                                     continue;
                                 }
                                 if ((CommunicateBasic.this.dataConstant4 & 0x10) == 0x10) {
-                                    CommunicateBasic.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(4));
-                                    CommunicateBasic.this.errorCode = 10551556;
+                                    CommunicateBasic.this.writeBytes(ParseUtils.clearDeviceDataBytes(4));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_DELETE_PI_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
-                                CommunicateBasic.this.o(this.bytes);
+                                CommunicateBasic.this.onDeleteResponse(this.bytes);
                                 continue;
                             }
                             else if (this.bytes[1] == 3) {
                                 if ((CommunicateBasic.this.dataConstant4 & 0x10) == 0x10) {
-                                    CommunicateBasic.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(4));
-                                    CommunicateBasic.this.errorCode = 10551556;
+                                    CommunicateBasic.this.writeBytes(ParseUtils.clearDeviceDataBytes(4));
+                                    CommunicateBasic.this.errorCode = SdkConstants.ERRORCODE_CONTINUE_DELETE_PI_TIMEOUT;
                                     CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                                     continue;
                                 }
@@ -2177,41 +2150,40 @@ public class CommunicateBasic extends CommunicateBase
                             }
                             else {
                                 if (this.bytes[1] == 4) {
-                                    CommunicateBasic.this.o(this.bytes);
+                                    CommunicateBasic.this.onDeleteResponse(this.bytes);
                                     continue;
                                 }
                                 continue;
                             }
                         }
-                        case -46: {
+                        case ON_PR_DATA_PIECE_2: {
                             CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                             this.resolveInputData(this.bytes, 1, 19);
                             if (!this.isParsing) {
                                 return;
                             }
-                            CommunicateBasic.this.l(this.bytes);
+                            CommunicateBasic.this.onPrData2(this.bytes);
                             continue;
                         }
-                        case -45: {
+                        case ON_SPO2_DATA_PIECE_2: {
                             CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                             this.resolveInputData(this.bytes, 1, 19);
                             if (!this.isParsing) {
                                 return;
                             }
-                            CommunicateBasic.this.m(this.bytes);
+                            CommunicateBasic.this.onSpo2Data2(this.bytes);
                             continue;
                         }
-                        case -41: {
+                        case ON_PI_DATA_PIECE_2: {
                             CommunicateBasic.this.startCommunicate(CommunicateBasic.this.communicateCallback);
                             this.resolveInputData(this.bytes, 1, 19);
                             if (!this.isParsing) {
                                 return;
                             }
-                            CommunicateBasic.this.n(this.bytes);
+                            CommunicateBasic.this.onPiData2(this.bytes);
                             continue;
                         }
                         default: {
-                            continue;
                         }
                     }
                 }
@@ -2226,6 +2198,13 @@ public class CommunicateBasic extends CommunicateBase
                 else {
                     --i;
                 }
+            }
+            if ((array[0] != 0 || array[1] != 0) && endIndex > 1) {
+                ByteEnums.FirstByteCommands cmd = ByteEnums.FirstByteCommands.getByCmdByte(array[0]);
+                if (cmd == null) return;
+                byte[] newData = new byte[endIndex];
+                System.arraycopy(array, 1, newData, 0, endIndex);
+                Log.e("read_bytes", cmd + " " + Arrays.toString(newData));
             }
         }
         

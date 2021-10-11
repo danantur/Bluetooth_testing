@@ -59,7 +59,7 @@ public abstract class CommunicateBase
     protected boolean communicating;
     protected boolean realtimeStarted;
     protected ConcurrentLinkedQueue<Byte> inputBytes;
-    protected int dataConstant; // переменная, по которой определяется алгоритм парсинга и некоторая логика
+    protected int deviceVersion;
     protected int spo2DataInfo;
     protected int dayStepsDataInfo;
     protected int fiveMinStepsDataInfo;
@@ -69,31 +69,35 @@ public abstract class CommunicateBase
     protected int errorCode2;
     protected int G;
     protected int H;
-    protected int I;
+    protected int dataLength2;
     protected int dataLength;
     protected int K;
-    protected int L;
-    protected int M;
+    protected int caseCount2;
+    protected int dataConstant5;
     protected int caseCount;
     protected boolean supportPI;
+
     protected int[] spo2Data;
     protected int[] prData;
     protected int[] piData;
-    protected int[] S;
-    protected int[] T;
-    protected int[] U;
-    protected int[] V;
-    protected int[] W;
-    protected int[] X;
-    protected int[] Y;
-    protected int[] Z;
-    protected int[] aa;
-    protected int[] ab;
+
+    protected int[] spo2DataOriginal;
+    protected int[] prDataOriginal;
+    protected int[] piDataOriginal;
+
+    protected int[] spo2DataCode;
+    protected int[] prDataCode;
+    protected int[] piDataCode;
+
+    protected int[] prData2;
+    protected int[] spo2Data2;
+    protected int[] piData2;
+
     protected int storageDataConstant;
     protected int dataConstant4;
-    protected int ae;
+    protected int dataPieceNumber2;
     protected int af;
-    protected String ag;
+    protected String startTime2;
     protected String startTime;
     protected int dataConstant2;
     protected ArrayList<SpO2PointData> spo2PointDataArray;
@@ -116,7 +120,7 @@ public abstract class CommunicateBase
         this.communicating = false;
         this.realtimeStarted = false;
         this.inputBytes = new ConcurrentLinkedQueue<>();
-        this.dataConstant = 0;
+        this.deviceVersion = 0;
         this.spo2DataInfo = 0;
         this.dayStepsDataInfo = 0;
         this.fiveMinStepsDataInfo = 0;
@@ -126,31 +130,30 @@ public abstract class CommunicateBase
         this.errorCode2 = 0;
         this.G = 0;
         this.H = 0;
-        this.I = 0;
+        this.dataLength2 = 0;
         this.dataLength = 0;
         this.K = 1;
-        this.L = 1;
-        this.M = 1;
+        this.caseCount2 = 1;
+        this.dataConstant5 = 1;
         this.caseCount = 1;
         this.supportPI = false;
         this.spo2Data = null;
         this.prData = null;
         this.piData = null;
-        this.S = null;
-        this.T = null;
-        this.U = null;
-        this.V = null;
-        this.W = null;
-        this.X = null;
-        this.Y = null;
-        this.Z = null;
-        this.aa = null;
-        this.ab = null;
+        this.spo2DataOriginal = null;
+        this.prDataOriginal = null;
+        this.piDataOriginal = null;
+        this.spo2DataCode = null;
+        this.prDataCode = null;
+        this.piDataCode = null;
+        this.prData2 = null;
+        this.spo2Data2 = null;
+        this.piData2 = null;
         this.storageDataConstant = 0;
         this.dataConstant4 = 0;
-        this.ae = 0;
+        this.dataPieceNumber2 = 0;
         this.af = 0;
-        this.ag = "";
+        this.startTime2 = "";
         this.startTime = "";
         this.dataConstant2 = 0;
         this.spo2PointDataArray = null;
@@ -179,11 +182,11 @@ public abstract class CommunicateBase
         this.errorCode2 = 0;
         this.G = 0;
         this.H = 0;
-        this.I = 0;
+        this.dataLength2 = 0;
         this.dataLength = 0;
         this.K = 1;
-        this.L = 1;
-        this.M = 1;
+        this.caseCount2 = 1;
+        this.dataConstant5 = 1;
         this.caseCount = 1;
         this.supportPI = false;
         if (null != this.inputBytes) {
@@ -191,9 +194,9 @@ public abstract class CommunicateBase
         }
         this.storageDataConstant = 0;
         this.dataConstant4 = 0;
-        this.ae = 0;
+        this.dataPieceNumber2 = 0;
         this.af = 0;
-        this.ag = "";
+        this.startTime2 = "";
         this.startTime = "";
         this.dataConstant2 = 0;
         this.isDeleting = false;
@@ -361,42 +364,42 @@ public abstract class CommunicateBase
         switch (storageInfo) {
             case POINTDATAINFO: {
                 this.writeBytes(ParseUtils.dataStorageBytes(0));
-                this.errorCode = 9437440;
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO_POINT_TIMEOUT;
                 this.setCommunicateErrorTimer(this.dataStorageInfoCallback);
                 break;
             }
             case DAYSTEPSINFO: {
                 this.writeBytes(ParseUtils.dataStorageBytes(1));
-                this.errorCode = 9437441;
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO_DAY_STEPS_TIMEOUT;
                 this.setCommunicateErrorTimer(this.dataStorageInfoCallback);
                 break;
             }
             case DAYFIVEMINUTESSTEPSINFO: {
                 this.writeBytes(ParseUtils.dataStorageBytes(2));
-                this.errorCode = 9437442;
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO_FIVE_MIN_STEPS_TIMEOUT;
                 this.setCommunicateErrorTimer(this.dataStorageInfoCallback);
                 break;
             }
             case ECGDATAINFO: {
                 this.writeBytes(ParseUtils.dataStorageBytes(3));
-                this.errorCode = 9437443;
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO_ECG_TIMEOUT;
                 this.setCommunicateErrorTimer(this.dataStorageInfoCallback);
             }
             case PULSEWAVEDATAINFO: {
                 this.writeBytes(ParseUtils.dataStorageBytes(4));
-                this.errorCode = 9437444;
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO_PULSE_WAVE_TIMEOUT;
                 this.setCommunicateErrorTimer(this.dataStorageInfoCallback);
                 break;
             }
             case WITHSTORAGEINFO: {
                 this.writeBytes(ParseUtils.dataStorageBytes(5));
-                this.errorCode = 9437445;
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO_STORAGE_SPO2_TIMEOUT;
                 this.setCommunicateErrorTimer(this.dataStorageInfoCallback);
                 break;
             }
             case PIECESPO2DATAINFO: {
                 this.writeBytes(ParseUtils.dataStorageBytes(6));
-                this.errorCode = 9437446;
+                this.errorCode = SdkConstants.ERRORCODE_PIECE_INFO_SPO2_TIMEOUT;
                 this.setCommunicateErrorTimer(this.dataStorageInfoCallback);
                 break;
             }

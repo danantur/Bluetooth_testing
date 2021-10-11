@@ -6,6 +6,7 @@ package com.ideabus.mylibrary.code.communicate;
 
 import android.util.Log;
 
+import com.ideabus.mylibrary.code.bean.DataPiece2;
 import com.ideabus.mylibrary.code.bean.DayStepsData;
 import com.ideabus.mylibrary.code.bean.FiveMinStepsData;
 import com.ideabus.mylibrary.code.bean.PieceData;
@@ -105,7 +106,7 @@ public class CommunicateWatches extends CommunicateBasic
     public void deleteData(final DeleteDataCallback referent) {
         this.deleteDataCallback = new WeakReference<>(referent).get();
         this.currentOperationCode = 6;
-        this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(0));
+        this.writeBytes(ParseUtils.clearDeviceDataBytes(0));
     }
     
     @Override
@@ -118,7 +119,7 @@ public class CommunicateWatches extends CommunicateBasic
         }
         this.currentOperationCode = 7;
         this.writeBytes(ParseUtils.startRealtimeBytes(1));
-        this.m();
+        this.checkSpo2DataPieceOriginal();
         if (this.realtimePingTimer == null) {
             (this.realtimePingTimer = new Timer()).schedule(new TimerTask() {
                 @Override
@@ -157,53 +158,53 @@ public class CommunicateWatches extends CommunicateBasic
         }
     }
     
-    protected void c(final byte[] array) {
-        final short[] m = DataClassesParseUtils.m(array);
-        if (this.Y != null && (this.ae + 1) * 27 < this.Y.length) {
-            for (int i = 27 * this.ae; i < 27 * (this.ae + 1); ++i) {
-                this.Y[i] = m[i - 27 * this.ae];
+    protected void onSpo2Data(final byte[] array) {
+        final short[] m = DataClassesParseUtils.spo2Data2Parse(array);
+        if (this.prData2 != null && (this.dataPieceNumber2 + 1) * 27 < this.prData2.length) {
+            for (int i = 27 * this.dataPieceNumber2; i < 27 * (this.dataPieceNumber2 + 1); ++i) {
+                this.prData2[i] = m[i - 27 * this.dataPieceNumber2];
             }
         }
-        else if (this.Y != null) {
-            for (int j = 27 * this.ae; j < this.Y.length; ++j) {
-                this.Y[j] = m[j - 27 * this.ae];
+        else if (this.prData2 != null) {
+            for (int j = 27 * this.dataPieceNumber2; j < this.prData2.length; ++j) {
+                this.prData2[j] = m[j - 27 * this.dataPieceNumber2];
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.I) {
-            this.ae = 0;
-            this.writeBytes(ParseUtils.i(1));
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength2) {
+            this.dataPieceNumber2 = 0;
+            this.writeBytes(ParseUtils.continueInfoBytes(1));
             this.errorCode = 10486017;
             this.setCommunicateErrorTimer(this.communicateCallback);
         }
     }
     
-    protected void d(final byte[] array) {
-        final short[] m = DataClassesParseUtils.m(array);
-        if (this.Z != null && (this.ae + 1) * 27 < this.Z.length) {
-            for (int i = this.ae * 27; i < (this.ae + 1) * 27; ++i) {
-                this.Z[i] = (m[i - this.ae * 27] & 0x7F);
+    protected void onPrData(final byte[] array) {
+        final short[] m = DataClassesParseUtils.spo2Data2Parse(array);
+        if (this.spo2Data2 != null && (this.dataPieceNumber2 + 1) * 27 < this.spo2Data2.length) {
+            for (int i = this.dataPieceNumber2 * 27; i < (this.dataPieceNumber2 + 1) * 27; ++i) {
+                this.spo2Data2[i] = (m[i - this.dataPieceNumber2 * 27] & 0x7F);
             }
         }
-        else if (this.Z != null) {
-            for (int j = this.ae * 27; j < this.Z.length; ++j) {
-                this.Z[j] = (m[j - this.ae * 27] & 0x7F);
+        else if (this.spo2Data2 != null) {
+            for (int j = this.dataPieceNumber2 * 27; j < this.spo2Data2.length; ++j) {
+                this.spo2Data2[j] = (m[j - this.dataPieceNumber2 * 27] & 0x7F);
             }
         }
-        ++this.ae;
-        if (this.ae * 27 >= this.I) {
+        ++this.dataPieceNumber2;
+        if (this.dataPieceNumber2 * 27 >= this.dataLength2) {
             this.H = 0;
-            this.ae = 0;
-            this.n();
+            this.dataPieceNumber2 = 0;
+            this.checkSpo2DataPieceCode();
         }
     }
     
     private void n1() {
-        final com.ideabus.mylibrary.code.bean.b b = new com.ideabus.mylibrary.code.bean.b();
-        this.b(b);
-        this.onEachPieceDataResult(b);
+        final DataPiece2 dataPiece2 = new DataPiece2();
+        this.b(dataPiece2);
+        this.onEachPieceDataResult(dataPiece2);
         if (ContecSdk.isDelete) {
-            this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(0));
+            this.writeBytes(ParseUtils.clearDeviceDataBytes(0));
         }
         else {
             this.e();
@@ -218,10 +219,10 @@ public class CommunicateWatches extends CommunicateBasic
         pieceData.totalNumber = this.totalNumber;
         pieceData.caseCount = this.caseCount;
         pieceData.supportPI = 0;
-        pieceData.length = this.I;
-        pieceData.startTime = this.ag;
-        pieceData.spo2Data = this.Z;
-        pieceData.prData = this.Y;
+        pieceData.length = this.dataLength2;
+        pieceData.startTime = this.startTime2;
+        pieceData.spo2Data = this.spo2Data2;
+        pieceData.prData = this.prData2;
     }
     
     private void e() {
@@ -234,14 +235,14 @@ public class CommunicateWatches extends CommunicateBasic
         }
     }
     
-    public void l() {
+    public void checkSpo2DataPieceDifference() {
         if (this.realtimePingTimer != null) {
             this.realtimePingTimer.cancel();
             this.realtimePingTimer = null;
         }
     }
     
-    protected void m() {
+    protected void checkSpo2DataPieceOriginal() {
         this.resetCommunicateErrorTimer();
         if (this.realtimeDelayTimer == null) {
             (this.realtimeDelayTimer = new Timer()).schedule(new TimerTask() {
@@ -322,7 +323,7 @@ public class CommunicateWatches extends CommunicateBasic
                                 }
                                 CommunicateWatches.this.realtimeStarted = false;
                                 CommunicateWatches.this.e();
-                                CommunicateWatches.this.l();
+                                CommunicateWatches.this.checkSpo2DataPieceDifference();
                                 CommunicateWatches.this.resetRealtimeDelayTimer();
                                 CommunicateWatches.this.resetCommunicateErrorTimer();
                                 CommunicateWatches.this.resetCommunicateTimer();
@@ -438,7 +439,7 @@ public class CommunicateWatches extends CommunicateBasic
                                         CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                         continue;
                                     }
-                                    CommunicateWatches.this.writeBytes(ParseUtils.i(0));
+                                    CommunicateWatches.this.writeBytes(ParseUtils.continueInfoBytes(0));
                                     CommunicateWatches.this.errorCode = 10486016;
                                     CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                     continue;
@@ -563,32 +564,32 @@ public class CommunicateWatches extends CommunicateBasic
                             if (CommunicateWatches.this.dataPieceNumber == 10) {
                                 CommunicateWatches.this.dataPieceNumber = 0;
                             }
-                            if (null != CommunicateWatches.this.ar && (CommunicateWatches.this.ae + 1) * 6 < CommunicateWatches.this.ar.length) {
-                                for (int i = CommunicateWatches.this.ae * 6; i < (CommunicateWatches.this.ae + 1) * 6; ++i) {
-                                    CommunicateWatches.this.ar[i] = h[i - CommunicateWatches.this.ae * 6];
+                            if (null != CommunicateWatches.this.ar && (CommunicateWatches.this.dataPieceNumber2 + 1) * 6 < CommunicateWatches.this.ar.length) {
+                                for (int i = CommunicateWatches.this.dataPieceNumber2 * 6; i < (CommunicateWatches.this.dataPieceNumber2 + 1) * 6; ++i) {
+                                    CommunicateWatches.this.ar[i] = h[i - CommunicateWatches.this.dataPieceNumber2 * 6];
                                 }
                             }
                             else if (null != CommunicateWatches.this.ar) {
-                                for (int j = CommunicateWatches.this.ae * 6; j < CommunicateWatches.this.ar.length; ++j) {
-                                    CommunicateWatches.this.ar[j] = h[j - CommunicateWatches.this.ae * 6];
+                                for (int j = CommunicateWatches.this.dataPieceNumber2 * 6; j < CommunicateWatches.this.ar.length; ++j) {
+                                    CommunicateWatches.this.ar[j] = h[j - CommunicateWatches.this.dataPieceNumber2 * 6];
                                 }
                             }
                             if (CommunicateWatches.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
                                 continue;
                             }
                             CommunicateWatches.this.dataPieceNumber++;
-                            CommunicateWatches.this.ae++;
+                            CommunicateWatches.this.dataPieceNumber2++;
                             if (CommunicateWatches.this.dataPieceNumber == 10 && (this.bytes[1] & 0x40) == 0x0) {
                                 CommunicateWatches.this.writeBytes(ParseUtils.fiveMinStepsInfoBytes(1));
                                 CommunicateWatches.this.errorCode = 9699584;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
-                            if ((this.bytes[1] & 0x40) == 0x0 || CommunicateWatches.this.ae * 6 < CommunicateWatches.this.ar.length) {
+                            if ((this.bytes[1] & 0x40) == 0x0 || CommunicateWatches.this.dataPieceNumber2 * 6 < CommunicateWatches.this.ar.length) {
                                 continue;
                             }
                             CommunicateWatches.this.dataPieceNumber = 0;
-                            CommunicateWatches.this.ae = 0;
+                            CommunicateWatches.this.dataPieceNumber2 = 0;
                             CommunicateWatches.this.fiveMinStepsData.setStepFiveDataBean(CommunicateWatches.this.ar);
                             CommunicateWatches.this.fiveMinStepsDataArray.add(CommunicateWatches.this.fiveMinStepsData);
                             if (ContecSdk.isDelete) {
@@ -630,19 +631,19 @@ public class CommunicateWatches extends CommunicateBasic
                             if (CommunicateWatches.this.dataPieceNumber == 10) {
                                 CommunicateWatches.this.dataPieceNumber = 0;
                             }
-                            if (null != CommunicateWatches.this.ecgDataArray && (CommunicateWatches.this.ae + 1) * 6 < CommunicateWatches.this.ecgDataArray.length) {
-                                for (int l = CommunicateWatches.this.ae * 6; l < (CommunicateWatches.this.ae + 1) * 6; ++l) {
-                                    CommunicateWatches.this.ecgDataArray[l] = k[l - CommunicateWatches.this.ae * 6];
+                            if (null != CommunicateWatches.this.ecgDataArray && (CommunicateWatches.this.dataPieceNumber2 + 1) * 6 < CommunicateWatches.this.ecgDataArray.length) {
+                                for (int l = CommunicateWatches.this.dataPieceNumber2 * 6; l < (CommunicateWatches.this.dataPieceNumber2 + 1) * 6; ++l) {
+                                    CommunicateWatches.this.ecgDataArray[l] = k[l - CommunicateWatches.this.dataPieceNumber2 * 6];
                                 }
                             }
                             else if (null != CommunicateWatches.this.ecgDataArray) {
-                                for (int n2 = CommunicateWatches.this.ae * 6; n2 < CommunicateWatches.this.ecgDataArray.length; ++n2) {
-                                    CommunicateWatches.this.ecgDataArray[n2] = k[n2 - CommunicateWatches.this.ae * 6];
+                                for (int n2 = CommunicateWatches.this.dataPieceNumber2 * 6; n2 < CommunicateWatches.this.ecgDataArray.length; ++n2) {
+                                    CommunicateWatches.this.ecgDataArray[n2] = k[n2 - CommunicateWatches.this.dataPieceNumber2 * 6];
                                 }
                             }
                             if (CommunicateWatches.this.dataPieceNumber != (this.bytes[1] & 0xF)) {
                                 CommunicateWatches.this.sleep(100);
-                                CommunicateWatches.this.ae -= CommunicateWatches.this.dataPieceNumber;
+                                CommunicateWatches.this.dataPieceNumber2 -= CommunicateWatches.this.dataPieceNumber;
                                 CommunicateWatches.this.dataPieceNumber = 10;
                                 if (null != CommunicateWatches.this.inputBytes) {
                                     CommunicateWatches.this.inputBytes.clear();
@@ -653,21 +654,21 @@ public class CommunicateWatches extends CommunicateBasic
                                 continue;
                             }
                             CommunicateWatches.this.dataPieceNumber++;
-                            CommunicateWatches.this.ae++;
+                            CommunicateWatches.this.dataPieceNumber2++;
                             if (CommunicateWatches.this.dataPieceNumber == 10 && (this.bytes[1] & 0x40) == 0x0) {
                                 CommunicateWatches.this.writeBytes(ParseUtils.g(1));
                                 CommunicateWatches.this.errorCode = 9765120;
                                 CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                 continue;
                             }
-                            if ((this.bytes[1] & 0x40) == 0x0 || CommunicateWatches.this.ae * 6 < CommunicateWatches.this.ecgData.size) {
+                            if ((this.bytes[1] & 0x40) == 0x0 || CommunicateWatches.this.dataPieceNumber2 * 6 < CommunicateWatches.this.ecgData.size) {
                                 continue;
                             }
                             CommunicateWatches.this.ecgData.uploadCount = CommunicateWatches.this.uploadCount;
                             CommunicateWatches.this.ecgData.currentCount = CommunicateWatches.this.currentCount;
                             CommunicateWatches.this.ecgData.ecgData = CommunicateWatches.this.ecgDataArray;
                             CommunicateWatches.this.dataPieceNumber = 0;
-                            CommunicateWatches.this.ae = 0;
+                            CommunicateWatches.this.dataPieceNumber2 = 0;
                             if (ContecSdk.isDelete) {
                                 CommunicateWatches.this.writeBytes(ParseUtils.g(127));
                             }
@@ -684,7 +685,7 @@ public class CommunicateWatches extends CommunicateBasic
                                 continue;
                             }
                             CommunicateWatches.this.currentCount = 0;
-                            CommunicateWatches.this.writeBytes(ParseUtils.i(0));
+                            CommunicateWatches.this.writeBytes(ParseUtils.continueInfoBytes(0));
                             CommunicateWatches.this.errorCode = 10486016;
                             CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                             continue;
@@ -695,20 +696,20 @@ public class CommunicateWatches extends CommunicateBasic
                                 return;
                             }
                             final int n3 = this.bytes[1] & 0x7;
-                            CommunicateWatches.this.ag = DataClassesParseUtils.parseDateTimeString(this.bytes);
-                            CommunicateWatches.this.I = (((this.bytes[10] & 0x7F) | (this.bytes[11] & 0x7F) << 7 | (this.bytes[12] & 0x7F) << 14) & -1);
-                            if (CommunicateWatches.this.I > 0) {
+                            CommunicateWatches.this.startTime2 = DataClassesParseUtils.parseDateTimeString(this.bytes);
+                            CommunicateWatches.this.dataLength2 = (((this.bytes[10] & 0x7F) | (this.bytes[11] & 0x7F) << 7 | (this.bytes[12] & 0x7F) << 14) & -1);
+                            if (CommunicateWatches.this.dataLength2 > 0) {
                                 switch (n3) {
                                     case 0: {
-                                        CommunicateWatches.this.Y = new int[CommunicateWatches.this.I];
-                                        CommunicateWatches.this.writeBytes(ParseUtils.b(0, 0));
+                                        CommunicateWatches.this.prData2 = new int[CommunicateWatches.this.dataLength2];
+                                        CommunicateWatches.this.writeBytes(ParseUtils.continuePrDataBytes(0, 0));
                                         CommunicateWatches.this.errorCode = 10617088;
                                         CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                         continue;
                                     }
                                     case 1: {
-                                        CommunicateWatches.this.Z = new int[CommunicateWatches.this.I];
-                                        CommunicateWatches.this.writeBytes(ParseUtils.c(0, 0));
+                                        CommunicateWatches.this.spo2Data2 = new int[CommunicateWatches.this.dataLength2];
+                                        CommunicateWatches.this.writeBytes(ParseUtils.continueSpo2DataBytes(0, 0));
                                         CommunicateWatches.this.errorCode = 10682624;
                                         CommunicateWatches.this.startCommunicate(CommunicateWatches.this.communicateCallback);
                                         continue;
@@ -734,7 +735,7 @@ public class CommunicateWatches extends CommunicateBasic
                             }
                             CommunicateWatches.this.resetCommunicateErrorTimer();
                             if (this.bytes[1] == 0) {
-                                CommunicateWatches.this.writeBytes(ParseUtils.deleteDataAboutSessionBytes(1));
+                                CommunicateWatches.this.writeBytes(ParseUtils.clearDeviceDataBytes(1));
                                 continue;
                             }
                             if (this.bytes[1] != 1) {
@@ -779,7 +780,7 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            CommunicateWatches.this.c(this.bytes);
+                            CommunicateWatches.this.onSpo2Data(this.bytes);
                             continue;
                         }
                         case -45: {
@@ -788,7 +789,7 @@ public class CommunicateWatches extends CommunicateBasic
                             if (!running) {
                                 return;
                             }
-                            CommunicateWatches.this.d(this.bytes);
+                            CommunicateWatches.this.onPrData(this.bytes);
                             continue;
                         }
                     }
